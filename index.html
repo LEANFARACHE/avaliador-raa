@@ -3203,6 +3203,20 @@ function rota() {
 
 /* ===================== início ===================== */
 carregar(); carregaGemini();
+// Link da equipe: ...#chave=AIza... guarda a chave neste navegador e a tira da barra de endereço.
+let chaveDoLink = false;
+function leChaveDoLink() {
+  if (naMoldura) return;
+  const m = (location.hash || '').match(/(?:^#|&)chave=([^&]+)/);
+  if (!m) return;
+  const v = decodeURIComponent(m[1]).trim();
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { location.hash = ''; }
+  if (!/^[\w-]{20,}$/.test(v)) return;
+  if (v !== GEM.chave) { GEM.chave = v; GEM.testadoEm = null; salvaGemini(); }
+  chaveDoLink = true;
+}
+leChaveDoLink();
+window.addEventListener('hashchange', () => { if (/chave=/.test(location.hash)) { leChaveDoLink(); renderGemini(); atualizaCapacidades(); aviso('Chave do Gemini guardada neste navegador. A sugestão de notas por IA já pode ser usada.', 'ok'); } });
 renderConfig(); ligaConfig(); renderGemini(); ligaGemini();
 const drop = $('#drop');
 ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
@@ -3237,6 +3251,7 @@ window.addEventListener('hashchange', rota);
 rota();
 atualizaCapacidades();
 if (EST.unidades.length) aviso(`Sessão restaurada: ${okUnidades().length} relatório(s) avaliados neste navegador.`, 'ok');
+if (chaveDoLink) aviso('Chave do Gemini da equipe guardada neste navegador. A sugestão de notas por IA já pode ser usada; das próximas vezes, basta abrir o endereço normal.', 'ok');
 window.__raa = { EST, GEM, planilha, dadosPainel, montarPdf, abrirDetalhe, notas, pacote };
 }
 </script>
