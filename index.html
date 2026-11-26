@@ -2076,7 +2076,7 @@ const GEM_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const GEM_PADRAO = 'gemini-flash-latest';
 const GEM_SUGERIDOS = [{ id: 'gemini-flash-latest', nome: 'Gemini Flash (versão mais recente)' }, { id: 'gemini-flash-lite-latest', nome: 'Gemini Flash-Lite (mais leve)' }];
 // Serviço da equipe (Google Apps Script com a chave guardada nele): quem não tem chave própria usa este.
-const GEM_EQUIPE = '';
+const GEM_EQUIPE = 'https://script.google.com/macros/s/AKfycbx6Jz-aFgouXu9LAzGCGVBfwNX6K9XGl9JKLuLuXbVPi0aBVmvcEesPXalXMTTdvY2S/exec';
 const GEM = { chave: '', modelo: GEM_PADRAO, modelos: [], testadoEm: null, ultimo: 0, equipe: GEM_EQUIPE };
 // Groq: API compatível com a da OpenAI, grátis com limites por minuto e por dia.
 const GRQ_LS = 'raa-groq';
@@ -2099,7 +2099,7 @@ function carregaGemini() {
     const g = JSON.parse(localStorage.getItem(GRQ_LS) || 'null');
     if (g && typeof g === 'object') { GRQ.chave = String(g.chave || ''); GRQ.modelo = String(g.modelo || GRQ_PADRAO); GRQ.modelos = Array.isArray(g.modelos) ? g.modelos.filter(m => m && m.id) : []; GRQ.testadoEm = g.testadoEm || null; }
     const f = localStorage.getItem('raa-ia-forn');
-    if (f === 'gemini' || f === 'groq') IAF = f; else if ((GEM.chave || GEM.equipe) && !GRQ.chave) IAF = 'gemini';
+    if (f === 'gemini' || f === 'groq') IAF = f; else if (GEM.chave && !GRQ.chave) IAF = 'gemini';
   } catch (e) { /* armazenamento indisponível: a chave vale só enquanto a página estiver aberta */ }
 }
 function salvaGemini() {
@@ -2114,10 +2114,11 @@ function salvaGemini() {
 // 'claude' no link publicado · 'gemini' no arquivo com chave · 'sem-chave' no arquivo ainda sem chave · null sem IA
 function iaProvedor() {
   if (naMoldura) return CAP.sample ? 'claude' : null;
-  if (IAF === 'groq') return GRQ.chave ? 'groq' : 'sem-chave';
-  return GEM.chave ? 'gemini' : GEM.equipe ? 'equipe' : 'sem-chave';
+  if (IAF === 'groq' && GRQ.chave) return 'groq';
+  if (IAF === 'gemini' && GEM.chave) return 'gemini';
+  return GEM.equipe ? 'equipe' : 'sem-chave';
 }
-const iaNome = () => { const p = iaProvedor(); return p === 'claude' ? 'Claude' : p === 'equipe' ? `Gemini da equipe (${GEM.modelo})` : p === 'groq' ? `Groq (${GRQ.modelo})` : `Gemini (${GEM.modelo})`; };
+const iaNome = () => { const p = iaProvedor(); return p === 'claude' ? 'Claude' : p === 'equipe' ? 'IA da equipe' : p === 'groq' ? `Groq (${GRQ.modelo})` : `Gemini (${GEM.modelo})`; };
 function atualizaCapacidades() {
   const p = iaProvedor();
   $$('.so-ia').forEach(el => el.classList.toggle('hidden', !p));
@@ -2683,10 +2684,47 @@ async function groqJSON(prompt, sinal, opcoes) {
   if (!texto.trim()) throw { code: c && c.finish_reason === 'length' ? 'max_tokens' : 'invalid_json' };
   return extraiJSON(texto);
 }
+// Serviço da equipe: o script guarda a chave (Groq ou Gemini) e devolve a resposta do fornecedor.
+async function equipeJSON(prompt, sinal, opcoes) {
+  const o = opcoes || {};
+  if (sinal && sinal.aborted) throw { code: 'cancelled' };
+  const ctl = new AbortController();
+  const ab = () => ctl.abort();
+  if (sinal) sinal.addEventListener('abort', ab, { once: true });
+  let esgotou = false;
+  const prazo = setTimeout(() => { esgotou = true; ctl.abort(); }, o.prazo || 240000);
+  let pc = null, ok = false;
+  GEM.ultimo = Date.now();
+  try {
+    // Pedido "simples" (texto puro), sem pré-verificação de CORS.
+    const rq = await fetch(GEM.equipe, { method: 'POST', body: JSON.stringify({ prompt, semJson: !!o.semJson }), signal: ctl.signal });
+    ok = rq.ok;
+    try { pc = JSON.parse(await rq.text()); } catch (e) { /* segue */ }
+  } catch (e) {
+    if (sinal && sinal.aborted) throw { code: 'cancelled' };
+    if (esgotou) throw { code: 'tempo' };
+    throw { code: 'rede', detalhe: String((e && e.message) || e) };
+  } finally { clearTimeout(prazo); if (sinal) sinal.removeEventListener('abort', ab); }
+  if (!pc) throw { code: ok ? 'equipe_falha' : 'rede' };
+  if (pc.codigo) throw { code: pc.codigo, limite: pc.limite };
+  const groq = pc.forn === 'groq';
+  if (!pc.ok) {
+    let j = null; try { j = JSON.parse(pc.erro || ''); } catch (e) { /* segue */ }
+    const err = groq ? erroGroq(pc.status || 500, j) : erroGemini(pc.status || 500, j);
+    if (err.code === 'sem_json' && !o.semJson) return equipeJSON(prompt, sinal, Object.assign({}, o, { semJson: true }));
+    throw err;
+  }
+  const j = pc.resposta || {};
+  let texto = '';
+  if (groq) { const c = (j.choices || [])[0]; texto = (c && c.message && c.message.content) || ''; if (!texto.trim()) throw { code: c && c.finish_reason === 'length' ? 'max_tokens' : 'invalid_json' }; }
+  else { const c = (j.candidates || [])[0]; texto = ((c && c.content && c.content.parts) || []).filter(p => p && !p.thought && typeof p.text === 'string').map(p => p.text).join(''); if (!texto.trim()) throw { code: c && c.finishReason === 'MAX_TOKENS' ? 'max_tokens' : 'invalid_json' }; }
+  return extraiJSON(texto);
+}
 async function chamarIA(prompt, sinal) {
   const p = iaProvedor();
   if (p === 'claude') return CAP.sample.json(prompt, { signal: sinal, modelTier: 'default' });
-  if (p === 'gemini' || p === 'equipe') return geminiJSON(prompt, sinal);
+  if (p === 'gemini') return geminiJSON(prompt, sinal);
+  if (p === 'equipe') return equipeJSON(prompt, sinal);
   if (p === 'groq') return groqJSON(prompt, sinal);
   throw { code: 'sem_chave' };
 }
@@ -2717,7 +2755,7 @@ function interpretaIA(r) {
   return ia;
 }
 async function lerUmaComIA(u, sinal, aoEsperar) {
-  const r = await comRetentativa(() => chamarIA(promptIA(u, iaProvedor() === 'groq' ? 2000 : 0), sinal), sinal, aoEsperar);
+  const r = await comRetentativa(() => chamarIA(promptIA(u, ['groq', 'equipe'].includes(iaProvedor()) ? 2000 : 0), sinal), sinal, aoEsperar);
   u.ia = Object.assign(interpretaIA(r), { em: Date.now(), fonte: iaNome() });
   u.atualizadoEm = Date.now();
   salvar();
@@ -2819,7 +2857,7 @@ async function lerTodosComIA() {
   const sinal = loteCtl.signal;
   b.textContent = 'Parar a leitura em lote';
   renderPendentes();
-  const intervalo = p === 'claude' ? 0 : p === 'groq' ? 40000 : 6000; // Groq grátis: poucos tokens por minuto // até 10 pedidos por minuto no Gemini
+  const intervalo = p === 'claude' ? 0 : p === 'gemini' ? 6000 : 40000; // Groq grátis: poucos tokens por minuto // até 10 pedidos por minuto no Gemini
   let feitas = 0; const falhas = [];
   try {
     for (let i = 0; i < alvo.length; i++) {
@@ -3243,7 +3281,7 @@ function renderGemini() {
   sel.innerHTML = (lista.some(m => m.id === C.modelo) ? '' : `<option value="${esc(C.modelo)}">${esc(C.modelo)}</option>`)
     + lista.map(m => `<option value="${esc(m.id)}">${esc(m.nome)}${m.nome.toLowerCase().includes(m.id) ? '' : ` · ${esc(m.id)}`}</option>`).join('');
   sel.value = C.modelo;
-  if (IAF === 'gemini' && !GEM.chave && GEM.equipe) { $('#gem-status').innerHTML = '<div class="msg ok">A IA da equipe está ativa: a sugestão de notas funciona sem colar chave. Só cole uma chave aqui se quiser usar a sua própria.</div>'; return; }
+  if (!cfgIA().chave && GEM.equipe) { $('#gem-status').innerHTML = '<div class="msg ok">A IA da equipe está ativa: a sugestão de notas funciona sem colar chave. Só cole uma chave aqui se quiser usar a sua própria.</div>'; return; }
   $('#gem-status').innerHTML = C.chave ? `<div class="msg ${C.testadoEm ? 'ok' : ''}">${C.testadoEm ? `Chave testada em ${new Date(C.testadoEm).toLocaleDateString('pt-BR')}.` : 'Chave guardada neste navegador, ainda não testada.'} A leitura com IA usa o ${nomeForn()}, modelo ${esc(C.modelo)}.</div>` : '';
 }
 async function listarModelosGroq() {
