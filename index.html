@@ -335,25 +335,23 @@ ol.passos{margin:0 0 14px;padding-left:20px;color:var(--ink-2);display:grid;gap:
 
   <section class="view" id="v-configuracoes">
     <div class="card so-local" id="cfg-ia">
-      <h2>Leitura qualitativa com IA (Gemini)</h2>
-      <p class="cap">Com uma chave gratuita do Gemini, a IA lê os trechos de cada seção do relatório e sugere a nota de 0 a 4 de cada dimensão, com justificativa. A chave é criada uma única vez, com qualquer conta Google; depois disso, ninguém precisa fazer login para usar.</p>
-      <ol class="passos">
-        <li>Abra <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a>, entre com uma conta Google e clique em <b>Create API key</b> (Criar chave de API). Não pede cartão.</li>
-        <li>Copie a chave, cole abaixo e clique em <b>Testar chave</b>.</li>
-      </ol>
+      <h2>Leitura qualitativa com IA</h2>
+      <p class="cap">Com uma chave gratuita, a IA lê os trechos de cada seção do relatório e sugere a nota de 0 a 4 de cada dimensão, com justificativa. A chave é criada uma única vez; depois disso, ninguém precisa fazer login para usar.</p>
+      <label class="lbl" style="max-width:460px;margin-bottom:12px">Fornecedor da IA<select id="ia-forn"><option value="groq">Groq (rápido, grátis, sem cartão)</option><option value="gemini">Gemini (Google)</option></select></label>
+      <ol class="passos" id="ia-passos"></ol>
       <div class="row" style="align-items:end">
-        <label class="lbl" style="flex:1 1 280px">Chave da API do Gemini<input id="gem-chave" type="password" autocomplete="off" spellcheck="false" placeholder="Cole a chave aqui"></label>
+        <label class="lbl" style="flex:1 1 280px"><span id="gem-rotulo">Chave da API</span><input id="gem-chave" type="password" autocomplete="off" spellcheck="false" placeholder="Cole a chave aqui"></label>
         <button class="quiet" id="gem-ver" type="button">Mostrar</button>
         <button id="gem-testar" type="button">Testar chave</button>
         <button class="danger" id="gem-apagar" type="button">Apagar chave</button>
       </div>
       <label class="lbl" style="max-width:460px;margin-top:12px">Modelo<select id="gem-modelo"></select></label>
       <div id="gem-status" aria-live="polite"></div>
-      <p class="cap" style="margin:12px 0 0">A chave fica guardada só neste navegador: não vai para o arquivo do avaliador, para a sessão exportada nem para a planilha. Ao pedir a leitura, os trechos do relatório são enviados ao Google. No plano gratuito, o Google pode usar esse conteúdo para melhorar os próprios produtos, inclusive com leitura por revisores humanos. Os RAAs são documentos públicos, mas não envie nada sigiloso. O plano gratuito também tem limites de pedidos por minuto e por dia, que aparecem no AI Studio.</p>
+      <p class="cap" style="margin:12px 0 0" id="ia-priv"></p>
     </div>
     <div class="card so-moldura hidden">
       <h2>Leitura qualitativa com IA</h2>
-      <p class="cap" style="margin:0">Neste link, a sugestão de notas usa o Claude e não precisa de configuração. Para usar o Gemini com uma chave gratuita, abra o arquivo do avaliador (.html) direto no navegador: a página publicada aqui não pode chamar outros serviços.</p>
+      <p class="cap" style="margin:0">Neste link, a sugestão de notas usa o Claude e não precisa de configuração. Para usar o Groq ou o Gemini com uma chave gratuita, abra o avaliador em leanfarache.github.io/avaliador-raa ou o arquivo .html direto no navegador: a página publicada aqui não pode chamar outros serviços.</p>
     </div>
     <div class="card">
       <h2>Nota final</h2>
@@ -2077,7 +2075,18 @@ const GEM_LS = 'raa-gemini';
 const GEM_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const GEM_PADRAO = 'gemini-flash-latest';
 const GEM_SUGERIDOS = [{ id: 'gemini-flash-latest', nome: 'Gemini Flash (versão mais recente)' }, { id: 'gemini-flash-lite-latest', nome: 'Gemini Flash-Lite (mais leve)' }];
-const GEM = { chave: '', modelo: GEM_PADRAO, modelos: [], testadoEm: null, ultimo: 0 };
+// Serviço da equipe (Google Apps Script com a chave guardada nele): quem não tem chave própria usa este.
+const GEM_EQUIPE = '';
+const GEM = { chave: '', modelo: GEM_PADRAO, modelos: [], testadoEm: null, ultimo: 0, equipe: GEM_EQUIPE };
+// Groq: API compatível com a da OpenAI, grátis com limites por minuto e por dia.
+const GRQ_LS = 'raa-groq';
+const GRQ_BASE = 'https://api.groq.com/openai/v1';
+const GRQ_PADRAO = 'openai/gpt-oss-120b';
+const GRQ_SUGERIDOS = [{ id: 'openai/gpt-oss-120b', nome: 'GPT-OSS 120B' }, { id: 'llama-3.3-70b-versatile', nome: 'Llama 3.3 70B' }, { id: 'openai/gpt-oss-20b', nome: 'GPT-OSS 20B (mais leve)' }];
+const GRQ = { chave: '', modelo: GRQ_PADRAO, modelos: [], testadoEm: null };
+let IAF = 'groq'; // fornecedor escolhido em Configurações
+const cfgIA = () => IAF === 'gemini' ? GEM : GRQ;
+const nomeForn = () => IAF === 'gemini' ? 'Gemini' : 'Groq';
 function carregaGemini() {
   if (naMoldura) return;
   try {
@@ -2086,20 +2095,29 @@ function carregaGemini() {
       GEM.chave = String(o.chave || ''); GEM.modelo = String(o.modelo || GEM_PADRAO);
       GEM.modelos = Array.isArray(o.modelos) ? o.modelos.filter(m => m && m.id) : []; GEM.testadoEm = o.testadoEm || null;
     }
+    const eq = localStorage.getItem('raa-equipe-url'); if (eq && /^https:\/\//.test(eq)) GEM.equipe = eq;
+    const g = JSON.parse(localStorage.getItem(GRQ_LS) || 'null');
+    if (g && typeof g === 'object') { GRQ.chave = String(g.chave || ''); GRQ.modelo = String(g.modelo || GRQ_PADRAO); GRQ.modelos = Array.isArray(g.modelos) ? g.modelos.filter(m => m && m.id) : []; GRQ.testadoEm = g.testadoEm || null; }
+    const f = localStorage.getItem('raa-ia-forn');
+    if (f === 'gemini' || f === 'groq') IAF = f; else if ((GEM.chave || GEM.equipe) && !GRQ.chave) IAF = 'gemini';
   } catch (e) { /* armazenamento indisponível: a chave vale só enquanto a página estiver aberta */ }
 }
 function salvaGemini() {
   try {
     if (!GEM.chave) localStorage.removeItem(GEM_LS);
     else localStorage.setItem(GEM_LS, JSON.stringify({ chave: GEM.chave, modelo: GEM.modelo, modelos: GEM.modelos, testadoEm: GEM.testadoEm }));
+    if (!GRQ.chave) localStorage.removeItem(GRQ_LS);
+    else localStorage.setItem(GRQ_LS, JSON.stringify({ chave: GRQ.chave, modelo: GRQ.modelo, modelos: GRQ.modelos, testadoEm: GRQ.testadoEm }));
+    localStorage.setItem('raa-ia-forn', IAF);
   } catch (e) { /* segue só na memória */ }
 }
 // 'claude' no link publicado · 'gemini' no arquivo com chave · 'sem-chave' no arquivo ainda sem chave · null sem IA
 function iaProvedor() {
   if (naMoldura) return CAP.sample ? 'claude' : null;
-  return GEM.chave ? 'gemini' : 'sem-chave';
+  if (IAF === 'groq') return GRQ.chave ? 'groq' : 'sem-chave';
+  return GEM.chave ? 'gemini' : GEM.equipe ? 'equipe' : 'sem-chave';
 }
-const iaNome = () => iaProvedor() === 'claude' ? 'Claude' : `Gemini (${GEM.modelo})`;
+const iaNome = () => { const p = iaProvedor(); return p === 'claude' ? 'Claude' : p === 'equipe' ? `Gemini da equipe (${GEM.modelo})` : p === 'groq' ? `Groq (${GRQ.modelo})` : `Gemini (${GEM.modelo})`; };
 function atualizaCapacidades() {
   const p = iaProvedor();
   $$('.so-ia').forEach(el => el.classList.toggle('hidden', !p));
@@ -2426,7 +2444,7 @@ function renderDetalhe(u) {
     <div class="row"><h2>Leitura qualitativa</h2><span class="spacer"></span>
       <button class="ghost so-ia ${prov ? '' : 'hidden'}" id="btn-ia">${lendo ? 'Parar leitura' : 'Sugerir notas com IA'}</button>
       <button class="quiet ${u.ia ? '' : 'hidden'}" id="btn-ia-aplicar">Usar as notas da IA</button></div>
-    <p class="cap">A nota da regra (contorno tracejado) vem de quais elementos exigidos pelo Guia aparecem no texto, não do tamanho. Revise cada dimensão: é a parte que a verificação automática não resolve sozinha.${prov === 'sem-chave' ? ' Com uma chave gratuita do Gemini (em Configurações), a IA lê os trechos de cada seção e sugere nota e justificativa.' : prov ? ` A IA (${prov === 'claude' ? 'Claude' : 'Gemini'}) lê os trechos de cada seção e sugere nota e justificativa; a decisão continua sendo sua.` : ''}</p>
+    <p class="cap">A nota da regra (contorno tracejado) vem de quais elementos exigidos pelo Guia aparecem no texto, não do tamanho. Revise cada dimensão: é a parte que a verificação automática não resolve sozinha.${prov === 'sem-chave' ? ' Com uma chave gratuita (Groq ou Gemini, em Configurações), a IA lê os trechos de cada seção e sugere nota e justificativa.' : prov ? ` A IA (${prov === 'claude' ? 'Claude' : prov === 'groq' ? 'Groq' : 'Gemini'}) lê os trechos de cada seção e sugere nota e justificativa; a decisão continua sendo sua.` : ''}</p>
     <div id="ia-status">${lendo ? `<div class="msg">Lendo com ${esc(iaNome())}…</div>` : u.ia && u.ia.em ? `<p class="cap">Sugestões ${u.ia.fonte ? `de ${esc(u.ia.fonte)} ` : 'da IA '}em ${new Date(u.ia.em).toLocaleDateString('pt-BR')}.</p>` : ''}</div>
     <div class="dims" id="dims">${dimsHTML(u)}</div>
   </div>
@@ -2491,8 +2509,11 @@ function ligaDetalhe(u) {
 /* ===================== leitura qualitativa por IA ===================== */
 let iaCtl = null;   // leitura de um relatório (ficha)
 let loteCtl = null; // leitura de todos os relatórios (lista)
-function promptIA(u) {
-  const s = (u.auto && u.auto.secoes) || {};
+// max: limite de caracteres por seção (o plano gratuito do Groq aceita poucos tokens por minuto).
+function promptIA(u, max) {
+  const s0 = (u.auto && u.auto.secoes) || {};
+  const corta = t => !max || !t || t.length <= max ? t : `${t.slice(0, Math.round(max * 0.7))} […] ${t.slice(-Math.round(max * 0.3))}`;
+  const s = {}; Object.keys(s0).forEach(k => { s[k] = corta(s0[k]); });
   const id = u.ident, ano = (u.auto && u.auto.ano) || EST.cfg.ano;
   const tr = (q, t) => `=== ${q} ===\n${t && t.trim() ? t.trim() : '(seção não localizada no PDF)'}`;
   return `Você avalia a QUALIDADE das análises de um Relatório Anual de Atividades (RAA) da Universidade Federal do Pará, exercício ${ano}, para a Diretoria de Informações Institucionais (Dinfi/Proplan).
@@ -2576,13 +2597,26 @@ async function geminiJSON(prompt, sinal, opcoes) {
   let esgotou = false;
   const prazo = setTimeout(() => { esgotou = true; ctl.abort(); }, o.prazo || 240000);
   let r, txt;
+  const viaEquipe = !GEM.chave && !!GEM.equipe;
   GEM.ultimo = Date.now();
   try {
-    r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEM.chave }, body: JSON.stringify(corpo), signal: ctl.signal });
-    txt = await r.text();
+    if (viaEquipe) {
+      // Pedido "simples" (texto puro), sem pré-verificação de CORS; o serviço devolve a resposta do Gemini embrulhada.
+      const rq = await fetch(GEM.equipe, { method: 'POST', body: JSON.stringify({ prompt, modelo: o.modelo || GEM.modelo, semJson: !!o.semJson }), signal: ctl.signal });
+      const b = await rq.text();
+      let pc = null; try { pc = JSON.parse(b); } catch (e) { /* segue */ }
+      if (!pc) throw { code: rq.ok ? 'equipe_falha' : 'rede' };
+      if (pc.codigo) throw { code: pc.codigo, limite: pc.limite };
+      r = { ok: !!pc.ok, status: pc.ok ? 200 : (pc.status || 500) };
+      txt = pc.ok ? JSON.stringify(pc.resposta) : String(pc.erro || '');
+    } else {
+      r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEM.chave }, body: JSON.stringify(corpo), signal: ctl.signal });
+      txt = await r.text();
+    }
   } catch (e) {
     if (sinal && sinal.aborted) throw { code: 'cancelled' };
     if (esgotou) throw { code: 'tempo' };
+    if (e && e.code) throw e;
     throw { code: 'rede', detalhe: String((e && e.message) || e) };
   } finally { clearTimeout(prazo); if (sinal) sinal.removeEventListener('abort', ab); }
   let j = null; try { j = JSON.parse(txt); } catch (e) { /* corpo sem JSON */ }
@@ -2597,10 +2631,63 @@ async function geminiJSON(prompt, sinal, opcoes) {
   if (!texto.trim()) throw { code: c.finishReason === 'MAX_TOKENS' ? 'max_tokens' : /SAFETY|PROHIBITED|BLOCKLIST|SPII|RECITATION/.test(c.finishReason || '') ? 'bloqueado' : 'invalid_json' };
   return extraiJSON(texto);
 }
+// Traduz a resposta de erro do Groq para os mesmos códigos usados com o Gemini.
+function erroGroq(status, j) {
+  const e = (j && j.error) || {};
+  const msg = String(e.message || '');
+  const cod = String(e.code || '');
+  const m = msg.match(/try again in (?:(\d+)m)?([\d.]+)s/i);
+  const espera = m ? Math.ceil((+(m[1] || 0)) * 60 + parseFloat(m[2])) : null;
+  const err = code => ({ code, status, detalhe: msg.slice(0, 300), espera });
+  if (status === 401 || /invalid_api_key/.test(cod)) return err('chave_invalida');
+  if (status === 413) return err('prompt_too_large');
+  if (status === 429) return /per day|\(TPD\)|\(RPD\)/i.test(msg) ? err('cota_dia') : err('cota_minuto');
+  if (status === 404 || /model_not_found|model_decommissioned/.test(cod)) return err('modelo');
+  if (status === 403) return err('sem_permissao');
+  if (status === 400 && /json_validate_failed/.test(cod)) return err('invalid_json');
+  if (status === 400 && /response_format/i.test(msg)) return err('sem_json');
+  if (status === 400 && /context|too long|token/i.test(msg)) return err('prompt_too_large');
+  if (status === 498 || status >= 500) return err('indisponivel');
+  return err('falha_gemini');
+}
+async function groqJSON(prompt, sinal, opcoes) {
+  const o = opcoes || {};
+  const modelo = o.modelo || GRQ.modelo;
+  const corpo = { model: modelo, messages: [{ role: 'user', content: prompt }], temperature: 0.2, max_completion_tokens: 2000 };
+  if (!o.semJson) corpo.response_format = { type: 'json_object' };
+  if (/gpt-oss/.test(modelo)) corpo.reasoning_effort = 'low';
+  if (sinal && sinal.aborted) throw { code: 'cancelled' };
+  const ctl = new AbortController();
+  const ab = () => ctl.abort();
+  if (sinal) sinal.addEventListener('abort', ab, { once: true });
+  let esgotou = false;
+  const prazo = setTimeout(() => { esgotou = true; ctl.abort(); }, o.prazo || 180000);
+  let r, txt;
+  GEM.ultimo = Date.now();
+  try {
+    r = await fetch(`${GRQ_BASE}/chat/completions`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + GRQ.chave }, body: JSON.stringify(corpo), signal: ctl.signal });
+    txt = await r.text();
+  } catch (e) {
+    if (sinal && sinal.aborted) throw { code: 'cancelled' };
+    if (esgotou) throw { code: 'tempo' };
+    throw { code: 'rede', detalhe: String((e && e.message) || e) };
+  } finally { clearTimeout(prazo); if (sinal) sinal.removeEventListener('abort', ab); }
+  let j = null; try { j = JSON.parse(txt); } catch (e) { /* corpo sem JSON */ }
+  if (!r.ok) {
+    const err = erroGroq(r.status, j);
+    if (err.code === 'sem_json' && !o.semJson) return groqJSON(prompt, sinal, Object.assign({}, o, { semJson: true }));
+    throw err;
+  }
+  const c = j && Array.isArray(j.choices) ? j.choices[0] : null;
+  const texto = c && c.message && typeof c.message.content === 'string' ? c.message.content : '';
+  if (!texto.trim()) throw { code: c && c.finish_reason === 'length' ? 'max_tokens' : 'invalid_json' };
+  return extraiJSON(texto);
+}
 async function chamarIA(prompt, sinal) {
   const p = iaProvedor();
   if (p === 'claude') return CAP.sample.json(prompt, { signal: sinal, modelTier: 'default' });
-  if (p === 'gemini') return geminiJSON(prompt, sinal);
+  if (p === 'gemini' || p === 'equipe') return geminiJSON(prompt, sinal);
+  if (p === 'groq') return groqJSON(prompt, sinal);
   throw { code: 'sem_chave' };
 }
 // Limite por minuto e sobrecarga momentânea: espera o tempo indicado pela API e tenta de novo (até 3 vezes).
@@ -2630,7 +2717,7 @@ function interpretaIA(r) {
   return ia;
 }
 async function lerUmaComIA(u, sinal, aoEsperar) {
-  const r = await comRetentativa(() => chamarIA(promptIA(u), sinal), sinal, aoEsperar);
+  const r = await comRetentativa(() => chamarIA(promptIA(u, iaProvedor() === 'groq' ? 2000 : 0), sinal), sinal, aoEsperar);
   u.ia = Object.assign(interpretaIA(r), { em: Date.now(), fonte: iaNome() });
   u.atualizadoEm = Date.now();
   salvar();
@@ -2646,35 +2733,40 @@ const iaPendentes = () => okUnidades().filter(u => u.ia && !u.revisado && R.DIMS
 const sem = c => esc(msgIA({ code: c }));
 function msgIA(e) {
   const c = e && e.code;
+  const F = nomeForn();
   const m = {
     cancelled: 'Leitura interrompida.',
-    sem_chave: 'Para a IA sugerir as notas, cole uma chave gratuita do Gemini em Configurações.',
+    sem_chave: 'Para a IA sugerir as notas, cole uma chave gratuita (Groq ou Gemini) em Configurações.',
     sem_trechos: 'Os trechos do relatório não estão guardados nesta sessão. Envie o PDF de novo para usar a leitura por IA.',
     not_granted: 'A leitura por IA não foi autorizada neste navegador.',
     sampling_disabled: 'A leitura por IA não está disponível para esta conta.',
     rate_limited: 'Limite de uso atingido no momento. Tente de novo mais tarde.',
     invalid_json: 'A resposta da IA veio fora do formato esperado. Tente de novo.',
-    prompt_too_large: 'O relatório é grande demais para a leitura por IA.',
-    chave_invalida: 'O Google não aceitou a chave do Gemini. Confira em Configurações (copie a chave de novo no Google AI Studio).',
+    prompt_too_large: `O relatório é grande demais para o limite gratuito do ${F}. Tente outro modelo ou fornecedor.`,
+    chave_invalida: `O ${F} não aceitou a chave. Confira em Configurações (copie a chave de novo no site do ${F}).`,
     cota_minuto: 'Muitas leituras em pouco tempo: o plano gratuito limita os pedidos por minuto. Aguarde um minuto e tente de novo.',
-    cota_dia: 'O limite diário gratuito deste modelo acabou. Ele volta à meia-noite no horário do Pacífico (entre 4h e 5h em Brasília). Até lá, dá para escolher outro modelo em Configurações.',
+    cota_dia: `O limite diário gratuito deste modelo no ${F} acabou. Ele volta no dia seguinte; até lá, dá para escolher outro modelo ou outro fornecedor em Configurações.`,
     fora_gratuito: 'Este modelo não faz parte do plano gratuito. Escolha outro modelo em Configurações.',
     modelo: 'O modelo escolhido não está disponível para esta chave. Em Configurações, clique em "Testar chave" para atualizar a lista de modelos.',
-    sem_permissao: 'A chave não tem permissão para usar a API do Gemini. Confira o projeto da chave no Google AI Studio.',
+    sem_permissao: `A chave não tem permissão para usar a API do ${F}. Confira a conta no site do ${F}.`,
     regiao: 'O Gemini não atende a região desta conexão.',
-    rede: 'Não foi possível falar com o Gemini. Confira a internet: a leitura por IA precisa de conexão (o resto do avaliador funciona sem ela).',
-    tempo: 'O Gemini demorou demais para responder. Tente de novo.',
-    indisponivel: 'O Gemini está sobrecarregado ou fora do ar agora. Tente de novo em alguns minutos.',
-    bloqueado: 'O Gemini recusou responder sobre este conteúdo. Avalie as dimensões à mão.',
-    max_tokens: 'A resposta do Gemini foi cortada antes do fim. Tente de novo ou escolha outro modelo.',
+    rede: `Não foi possível falar com o ${F}. Confira a internet: a leitura por IA precisa de conexão (o resto do avaliador funciona sem ela).`,
+    tempo: `O ${F} demorou demais para responder. Tente de novo.`,
+    indisponivel: `O ${F} está sobrecarregado ou fora do ar agora. Tente de novo em alguns minutos ou troque de fornecedor em Configurações.`,
+    bloqueado: `O ${F} recusou responder sobre este conteúdo. Avalie as dimensões à mão.`,
+    max_tokens: `A resposta do ${F} foi cortada antes do fim. Tente de novo ou escolha outro modelo.`,
+    limite_equipe: 'O limite diário da IA da equipe acabou. Ele volta amanhã; quem administra o serviço pode aumentá-lo.',
+    sem_chave_servico: 'O serviço da IA da equipe está sem a chave do Gemini. Avise quem administra o serviço.',
+    pedido_invalido: 'O serviço da IA da equipe recusou o pedido. Tente de novo.',
+    equipe_falha: 'O serviço da IA da equipe respondeu fora do esperado. Tente de novo em instantes.',
   }[c];
   if (m) return m;
-  if (c === 'falha_gemini' && e.detalhe) return 'O Gemini respondeu com erro: ' + e.detalhe;
+  if (c === 'falha_gemini' && e.detalhe) return `O ${F} respondeu com erro: ` + e.detalhe;
   return 'Não foi possível concluir a leitura por IA agora. Tente de novo.';
 }
 const linkConfig = ' <a href="#configuracoes">Ir para Configurações</a>';
 function avisoEspera(s, c, quem) {
-  return `${c === 'indisponivel' ? 'O Gemini está sobrecarregado' : 'Limite por minuto do plano gratuito atingido'}: nova tentativa${quem ? ` com ${esc(quem)}` : ''} em ${s} segundos…`;
+  return `${c === 'indisponivel' ? `O ${nomeForn()} está sobrecarregado` : 'Limite por minuto do plano gratuito atingido'}: nova tentativa${quem ? ` com ${esc(quem)}` : ''} em ${s} segundos…`;
 }
 async function lerComIA(u) {
   const st = $('#ia-status');
@@ -2727,7 +2819,7 @@ async function lerTodosComIA() {
   const sinal = loteCtl.signal;
   b.textContent = 'Parar a leitura em lote';
   renderPendentes();
-  const intervalo = p === 'gemini' ? 6000 : 0; // até 10 pedidos por minuto no Gemini
+  const intervalo = p === 'claude' ? 0 : p === 'groq' ? 40000 : 6000; // Groq grátis: poucos tokens por minuto // até 10 pedidos por minuto no Gemini
   let feitas = 0; const falhas = [];
   try {
     for (let i = 0; i < alvo.length; i++) {
@@ -3127,15 +3219,47 @@ function ligaConfig() {
 }
 
 /* ----- Gemini (chave gratuita do Google AI Studio) ----- */
+const TXT_FORN = {
+  groq: {
+    passos: '<li>Abra <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">console.groq.com/keys</a>, crie a conta (pode entrar com uma conta Google) e clique em <b>Create API Key</b>. Não pede cartão.</li><li>Copie a chave (começa com <code>gsk_</code>), cole abaixo e clique em <b>Testar chave</b>.</li>',
+    priv: 'A chave fica guardada só neste navegador: não vai para o arquivo do avaliador, para a sessão exportada nem para a planilha. Ao pedir a leitura, os trechos do relatório são enviados ao Groq. O plano gratuito aceita poucos tokens por minuto: por isso a página manda um resumo de cada seção e, na leitura em lote, lê cerca de um relatório por minuto. Os limites da sua conta aparecem em console.groq.com.',
+  },
+  gemini: {
+    passos: '<li>Abra <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a>, entre com uma conta Google e clique em <b>Create API key</b> (Criar chave de API). Não pede cartão.</li><li>Copie a chave, cole abaixo e clique em <b>Testar chave</b>.</li>',
+    priv: 'A chave fica guardada só neste navegador: não vai para o arquivo do avaliador, para a sessão exportada nem para a planilha. Ao pedir a leitura, os trechos do relatório são enviados ao Google. No plano gratuito, o Google pode usar esse conteúdo para melhorar os próprios produtos, inclusive com leitura por revisores humanos. Os RAAs são documentos públicos, mas não envie nada sigiloso. O plano gratuito também tem limites de pedidos por minuto e por dia, que aparecem no AI Studio.',
+  },
+};
 function renderGemini() {
   if (naMoldura || !$('#gem-chave')) return;
-  $('#gem-chave').value = GEM.chave;
-  const lista = GEM.modelos.length ? GEM.modelos : GEM_SUGERIDOS;
+  const C = cfgIA(), T = TXT_FORN[IAF];
+  $('#ia-forn').value = IAF;
+  $('#ia-passos').innerHTML = T.passos;
+  $('#ia-priv').textContent = T.priv;
+  $('#gem-rotulo').textContent = `Chave da API do ${nomeForn()}`;
+  $('#gem-chave').value = C.chave;
+  const padrao = IAF === 'gemini' ? GEM_SUGERIDOS : GRQ_SUGERIDOS;
+  const lista = C.modelos.length ? C.modelos : padrao;
   const sel = $('#gem-modelo');
-  sel.innerHTML = (lista.some(m => m.id === GEM.modelo) ? '' : `<option value="${esc(GEM.modelo)}">${esc(GEM.modelo)}</option>`)
+  sel.innerHTML = (lista.some(m => m.id === C.modelo) ? '' : `<option value="${esc(C.modelo)}">${esc(C.modelo)}</option>`)
     + lista.map(m => `<option value="${esc(m.id)}">${esc(m.nome)}${m.nome.toLowerCase().includes(m.id) ? '' : ` · ${esc(m.id)}`}</option>`).join('');
-  sel.value = GEM.modelo;
-  $('#gem-status').innerHTML = GEM.chave ? `<div class="msg ${GEM.testadoEm ? 'ok' : ''}">${GEM.testadoEm ? `Chave testada em ${new Date(GEM.testadoEm).toLocaleDateString('pt-BR')}.` : 'Chave guardada neste navegador, ainda não testada.'} A leitura com IA usa o modelo ${esc(GEM.modelo)}.</div>` : '';
+  sel.value = C.modelo;
+  if (IAF === 'gemini' && !GEM.chave && GEM.equipe) { $('#gem-status').innerHTML = '<div class="msg ok">A IA da equipe está ativa: a sugestão de notas funciona sem colar chave. Só cole uma chave aqui se quiser usar a sua própria.</div>'; return; }
+  $('#gem-status').innerHTML = C.chave ? `<div class="msg ${C.testadoEm ? 'ok' : ''}">${C.testadoEm ? `Chave testada em ${new Date(C.testadoEm).toLocaleDateString('pt-BR')}.` : 'Chave guardada neste navegador, ainda não testada.'} A leitura com IA usa o ${nomeForn()}, modelo ${esc(C.modelo)}.</div>` : '';
+}
+async function listarModelosGroq() {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 30000);
+  let r, j = null;
+  try {
+    r = await fetch(`${GRQ_BASE}/models`, { headers: { Authorization: 'Bearer ' + GRQ.chave }, signal: ctl.signal });
+    try { j = await r.json(); } catch (e) { /* corpo sem JSON */ }
+  } catch (e) { throw { code: ctl.signal.aborted ? 'tempo' : 'rede', detalhe: String((e && e.message) || e) }; }
+  finally { clearTimeout(t); }
+  if (!r.ok) throw erroGroq(r.status, j);
+  const fora = /(whisper|tts|guard|playai|orpheus|distil|prompt|safeguard|compound|allam)/i;
+  const pref = id => { const k = GRQ_SUGERIDOS.findIndex(m => m.id === id); return k < 0 ? 99 : k; };
+  return ((j && j.data) || []).filter(m => m && m.id && m.active !== false && !fora.test(m.id))
+    .map(m => ({ id: m.id, nome: (GRQ_SUGERIDOS.find(x => x.id === m.id) || {}).nome || m.id }))
+    .sort((a, b) => pref(a.id) - pref(b.id) || a.id.localeCompare(b.id));
 }
 function ordenaModelos(l) {
   const alias = id => id === 'gemini-flash-latest' ? 0 : id === 'gemini-flash-lite-latest' ? 1 : /-latest$/.test(id) ? 2 : 3;
@@ -3160,33 +3284,38 @@ async function listarModelosGemini() {
 }
 async function testarGemini() {
   const b = $('#gem-testar');
+  const C = cfgIA();
   const v = $('#gem-chave').value.trim();
   if (!v) { $('#gem-status').innerHTML = '<div class="msg warn">Cole a chave da API antes de testar.</div>'; return; }
-  if (v !== GEM.chave) { GEM.chave = v; GEM.testadoEm = null; }
+  if (v !== C.chave) { C.chave = v; C.testadoEm = null; }
   salvaGemini(); atualizaCapacidades();
   b.disabled = true; b.textContent = 'Testando…';
   $('#gem-status').innerHTML = '<div class="msg">Conferindo a chave e os modelos disponíveis…</div>';
   try {
-    const modelos = await listarModelosGemini();
+    const modelos = IAF === 'gemini' ? await listarModelosGemini() : await listarModelosGroq();
     if (modelos.length) {
-      GEM.modelos = modelos;
-      if (!modelos.some(m => m.id === GEM.modelo)) GEM.modelo = (modelos.find(m => m.id === GEM_PADRAO) || modelos.find(m => /flash/.test(m.id) && !/lite|preview|exp/.test(m.id)) || modelos[0]).id;
+      C.modelos = modelos;
+      if (!modelos.some(m => m.id === C.modelo)) C.modelo = IAF === 'gemini'
+        ? (modelos.find(m => m.id === GEM_PADRAO) || modelos.find(m => /flash/.test(m.id) && !/lite|preview|exp/.test(m.id)) || modelos[0]).id
+        : (modelos.find(m => m.id === GRQ_PADRAO) || modelos[0]).id;
     }
     const t0 = Date.now();
-    await geminiJSON('Responda apenas com este JSON: {"ok": true}', null, { prazo: 90000 });
-    GEM.testadoEm = Date.now(); salvaGemini(); renderGemini();
-    $('#gem-status').innerHTML = `<div class="msg ok">Chave aceita: o modelo ${esc(GEM.modelo)} respondeu em ${((Date.now() - t0) / 1000).toFixed(1).replace('.', ',')} s. A sugestão de notas já pode ser usada na ficha de cada relatório e, para todos de uma vez, na lista de relatórios.</div>`;
+    const teste = 'Responda apenas com este JSON: {"ok": true}';
+    if (IAF === 'gemini') await geminiJSON(teste, null, { prazo: 90000 }); else await groqJSON(teste, null, { prazo: 90000 });
+    C.testadoEm = Date.now(); salvaGemini(); renderGemini();
+    $('#gem-status').innerHTML = `<div class="msg ok">Chave aceita: o ${nomeForn()} (modelo ${esc(C.modelo)}) respondeu em ${((Date.now() - t0) / 1000).toFixed(1).replace('.', ',')} s. A sugestão de notas já pode ser usada na ficha de cada relatório e, para todos de uma vez, na lista de relatórios.</div>`;
   } catch (e) {
-    GEM.testadoEm = null; salvaGemini(); renderGemini();
+    C.testadoEm = null; salvaGemini(); renderGemini();
     $('#gem-status').innerHTML = `<div class="msg err">${esc(msgIA(e))}</div>`;
   } finally { b.disabled = false; b.textContent = 'Testar chave'; }
 }
 function ligaGemini() {
   if (naMoldura || !$('#gem-chave')) return;
-  $('#gem-chave').onchange = e => { const v = e.target.value.trim(); if (v === GEM.chave) return; GEM.chave = v; GEM.testadoEm = null; salvaGemini(); renderGemini(); atualizaCapacidades(); };
-  $('#gem-modelo').onchange = e => { GEM.modelo = e.target.value; salvaGemini(); renderGemini(); };
+  $('#ia-forn').onchange = e => { IAF = e.target.value === 'gemini' ? 'gemini' : 'groq'; salvaGemini(); renderGemini(); atualizaCapacidades(); };
+  $('#gem-chave').onchange = e => { const C = cfgIA(); const v = e.target.value.trim(); if (v === C.chave) return; C.chave = v; C.testadoEm = null; salvaGemini(); renderGemini(); atualizaCapacidades(); };
+  $('#gem-modelo').onchange = e => { cfgIA().modelo = e.target.value; salvaGemini(); renderGemini(); };
   $('#gem-testar').onclick = testarGemini;
-  $('#gem-apagar').onclick = () => { Object.assign(GEM, { chave: '', modelo: GEM_PADRAO, modelos: [], testadoEm: null }); salvaGemini(); renderGemini(); atualizaCapacidades(); aviso('Chave do Gemini apagada deste navegador.', 'ok'); };
+  $('#gem-apagar').onclick = () => { Object.assign(cfgIA(), { chave: '', modelo: IAF === 'gemini' ? GEM_PADRAO : GRQ_PADRAO, modelos: [], testadoEm: null }); salvaGemini(); renderGemini(); atualizaCapacidades(); aviso(`Chave do ${nomeForn()} apagada deste navegador.`, 'ok'); };
   $('#gem-ver').onclick = () => { const i = $('#gem-chave'); const ver = i.type === 'password'; i.type = ver ? 'text' : 'password'; $('#gem-ver').textContent = ver ? 'Ocultar' : 'Mostrar'; };
 }
 
@@ -3212,11 +3341,14 @@ function leChaveDoLink() {
   const v = decodeURIComponent(m[1]).trim();
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { location.hash = ''; }
   if (!/^[\w-]{20,}$/.test(v)) return;
-  if (v !== GEM.chave) { GEM.chave = v; GEM.testadoEm = null; salvaGemini(); }
+  IAF = /^gsk_/.test(v) ? 'groq' : 'gemini';
+  const C = cfgIA();
+  if (v !== C.chave) { C.chave = v; C.testadoEm = null; }
+  salvaGemini();
   chaveDoLink = true;
 }
 leChaveDoLink();
-window.addEventListener('hashchange', () => { if (/chave=/.test(location.hash)) { leChaveDoLink(); renderGemini(); atualizaCapacidades(); aviso('Chave do Gemini guardada neste navegador. A sugestão de notas por IA já pode ser usada.', 'ok'); } });
+window.addEventListener('hashchange', () => { if (/chave=/.test(location.hash)) { leChaveDoLink(); renderGemini(); atualizaCapacidades(); aviso(`Chave do ${nomeForn()} guardada neste navegador. A sugestão de notas por IA já pode ser usada.`, 'ok'); } });
 renderConfig(); ligaConfig(); renderGemini(); ligaGemini();
 const drop = $('#drop');
 ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
@@ -3251,8 +3383,8 @@ window.addEventListener('hashchange', rota);
 rota();
 atualizaCapacidades();
 if (EST.unidades.length) aviso(`Sessão restaurada: ${okUnidades().length} relatório(s) avaliados neste navegador.`, 'ok');
-if (chaveDoLink) aviso('Chave do Gemini da equipe guardada neste navegador. A sugestão de notas por IA já pode ser usada; das próximas vezes, basta abrir o endereço normal.', 'ok');
-window.__raa = { EST, GEM, planilha, dadosPainel, montarPdf, abrirDetalhe, notas, pacote };
+if (chaveDoLink) aviso(`Chave do ${nomeForn()} da equipe guardada neste navegador. A sugestão de notas por IA já pode ser usada; das próximas vezes, basta abrir o endereço normal.`, 'ok');
+window.__raa = { EST, GEM, GRQ, planilha, dadosPainel, montarPdf, abrirDetalhe, notas, pacote };
 }
 </script>
 </body>
