@@ -261,6 +261,27 @@ button.passo{min-height:36px;width:38px;padding:0}
 .rep .sig{margin-top:28px;font-size:12.5px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:12px;font-weight:400;display:block}
 .rep table{font-size:13.5px}
 .rep th{background:transparent}
+/* lacunas: cada critério traz o motivo; a barra à esquerda diz se ficou "não" (vermelho) ou "em parte" (âmbar) */
+.rep .rep-intro{color:var(--ink-3);font-size:13.5px;margin-bottom:14px}
+.rep .rep-aviso{background:var(--warn-bg);border-radius:var(--r-s);padding:10px 14px;font-size:13.5px;margin:0 0 16px}
+.rep .lacunas{list-style:none;padding:0;margin:0 0 6px;display:grid;gap:16px}
+.rep .lac{border-left:3px solid var(--fx5);padding:1px 0 1px 16px;max-width:none;break-inside:avoid}
+.rep .lac-parc{border-left-color:var(--fx3)}
+.rep .lac-cab{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-bottom:6px}
+.rep .lac-cod{font-weight:700;font-size:13px;color:var(--ink)}
+.rep .lac-tit{font-weight:650;font-size:14.5px;color:var(--ink)}
+.rep .lac-guia{font-size:12.5px;color:var(--ink-3)}
+.rep .lac-dl{display:grid;grid-template-columns:150px minmax(0,1fr);gap:6px 18px;margin:0;max-width:92ch}
+.rep .lac-dl dt{font-size:12.5px;font-weight:600;color:var(--ink-3);padding-top:2px}
+.rep .lac-dl dd{margin:0;font-size:14px;line-height:1.55;color:var(--ink-2)}
+.rep .lac-motivo{color:var(--ink)!important}
+.rep .lac-parc p{font-size:14px;line-height:1.55;margin:0 0 4px;max-width:92ch}
+.rep .lac-pg{color:var(--ink-3);font-size:12.5px;white-space:nowrap}
+.rep .rep-h5{font-size:13.5px;font-weight:700;color:var(--ink);margin:26px 0 12px}
+@media (max-width:640px){.rep .lac-dl{grid-template-columns:1fr;gap:1px}.rep .lac-dl dd{margin-bottom:8px}}
+/* aviso ao avaliador (não sai na devolutiva): critérios mudados sem o motivo escrito */
+.rep-falta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:16px;padding:12px 14px;background:var(--warn-bg);border-radius:var(--r-s)}
+.rep-falta p{margin:0;font-size:13.5px;color:var(--ink-2);flex:1 1 320px}
 .cod-t{font-weight:650;color:var(--ink-3)}
 
 /* ---------- calibração e configurações ---------- */
@@ -2143,6 +2164,204 @@ function parecer(u, cfg) {
   };
 }
 
+/* ===================== motivo de cada lacuna, para a devolutiva ===================== */
+// O diagnóstico da regra é curto e escrito para o avaliador ("não localizei a Tabela 2"); a ficha continua mostrando assim.
+// Na devolutiva, a unidade lê o mesmo diagnóstico como frase completa e impessoal, com o que faltou.
+const FEM_RE = /^(tabela|se[çc][aã]o|lista|mensagem|rela[çc][aã]o|figura|legenda|fonte|capa|vis[aã]o|an[aá]lise|considera[çc]|declara[çc]|normativa|instru[çc])/i;
+const genero = x => FEM_RE.test(String(x).trim()) ? 'a' : 'o';
+const maiusc = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const listaE = l => l.length <= 1 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' e ' + l[l.length - 1];
+const qtd = (n, um, varios) => `${n} ${+n === 1 ? um : varios}`;
+const COM_ARTIGO = {
+  'prioridades': 'as prioridades da gestão', 'ações executadas': 'as ações executadas', 'avanços': 'os avanços',
+  'riscos e fatores': 'os riscos e fatores que afetaram os resultados', 'desafios futuros': 'os desafios futuros',
+  'alcance das metas': 'o alcance das metas', 'dificuldades': 'as dificuldades', 'impactos': 'os impactos',
+  'causas e encaminhamentos': 'as causas e os encaminhamentos', 'resultados e assertivas': 'os resultados e as assertivas',
+  'perspectivas': 'as perspectivas', 'desafios': 'os desafios que permanecem',
+};
+const comArtigo = s => s.split(', ').map(x => COM_ARTIGO[x] || x);
+const nomeTabela = cod => { const t = TABELA[cod]; return t ? `${genero(t)} ${t}` : 'a tabela'; };
+const CAMPOS_A5 = { 'criação': 'a data de criação', 'normativa': 'a normativa de criação', 'missão': 'a missão', 'visão': 'a visão' };
+const CAMPOS_X1 = { 'UFPA': 'o nome da UFPA', 'unidade': 'o nome da unidade', 'título': 'o título "Relatório Anual de Atividades"', 'ano-base': 'o ano-base do exercício' };
+const MIN_DADOS = { E2: 8, E5: 10, E6: 10, E9: 6, E11: 4 };
+// Tabela a que cada critério de dados se refere, para a frase dizer qual está incompleta.
+const TABELA = { E2: 'Tabela 2', E5: 'Tabela 3', E6: 'Tabela 3', E9: 'Tabela 4', E11: 'Tabela 5', F2: 'Tabela 6', F3: 'Tabela 6', F4: 'Tabela 6', F6: 'Tabela 7', F7: 'Tabela 7', F8: 'Tabela 7', H2: 'Tabela 8', H5: 'tabela de Empresas Juniores' };
+const TITULO = { A3: 'Mensagem do Dirigente', H6: 'Considerações Finais' };
+// Critérios em que o Guia aceita uma declaração no lugar do conteúdo: quando a regra marca "não", ela também não achou a declaração.
+const DECLARA = {
+  B3: 'a estrutura organizacional não teve alteração', C4: 'não houve ação relevante não prevista no PDU e no PGO',
+  F1: 'não houve previsão de obras ou reformas', F2: 'não houve previsão de obras ou reformas', F3: 'não houve previsão de obras ou reformas', F4: 'não houve previsão de obras ou reformas',
+  F5: 'não houve previsão de aquisições de TI', F6: 'não houve previsão de aquisições de TI', F7: 'não houve previsão de aquisições de TI', F8: 'não houve previsão de aquisições de TI',
+  H1: 'não houve previsão de cursos novos', H2: 'não houve previsão de cursos novos', H3: 'não houve previsão de cursos novos',
+  H4: 'a unidade não possui Empresa Júnior', H5: 'a unidade não possui Empresa Júnior',
+};
+
+function fraseRegra(cod, info) {
+  let s = String(info || '').trim();
+  if (!s) return '';
+  // orientações ao avaliador ("marque não se aplica") não vão para a unidade
+  s = s.replace(/\s*\(se a unidade[^)]*\)/i, '').replace(/:\s*ele só vem no template[\s\S]*$/, '').trim();
+  let m;
+  // A2, A3 · dirigentes e mensagem
+  if (s === 'título localizado, mas quase sem conteúdo') return 'O título da seção está no relatório, mas quase sem conteúdo abaixo dele.';
+  if (s === 'sem o título da relação, mas há dirigentes listados nas páginas iniciais') return 'Há dirigentes listados nas páginas iniciais, mas sem o título "Relação dos Dirigentes da Unidade".';
+  if (s === 'título localizado, mas sem texto' || s === 'título sem texto') return `O título${TITULO[cod] ? ` "${TITULO[cod]}"` : ''} está no relatório, mas sem texto abaixo dele.`;
+  if ((m = s.match(/^cerca de ([\d.]+) caracteres; cobre (\d+) de (\d+) pontos(?: \(falta: (.+)\))?$/))) {
+    if (!m[4]) return `A mensagem trata dos ${m[3]} pontos pedidos pelo Guia, mas é curta (cerca de ${m[1]} caracteres).`;
+    const trata = +m[2] ? `trata de ${m[2]} dos ${m[3]} pontos pedidos pelo Guia` : `não trata de nenhum dos ${m[3]} pontos pedidos pelo Guia`;
+    return `A mensagem tem cerca de ${m[1]} caracteres e ${trata}; ${+m[2] ? 'não aborda' : 'faltam'} ${listaE(comArtigo(m[4]))}.`;
+  }
+  // A4, A5 · listas e visão geral
+  if (s === 'nenhuma lista encontrada') return 'Nenhuma das listas de siglas, tabelas, quadros e figuras foi encontrada.';
+  if ((m = s.match(/^(\d+) lista\(s\) encontrada\(s\)$/))) return `Só ${+m[1] === 1 ? 'foi encontrada 1' : `foram encontradas ${m[1]}`} das listas de siglas, tabelas, quadros e figuras.`;
+  if ((m = s.match(/^(?:traz (.+)|seção sem as informações de identificação); falta (.+)$/))) {
+    const falta = m[2].split(', ').map(k => CAMPOS_A5[k] || k);
+    if (!m[1]) return `A Visão Geral não traz as informações que identificam a unidade: ${falta.length > 1 ? 'faltam' : 'falta'} ${listaE(falta)}.`;
+    return `A Visão Geral traz ${listaE(m[1].split(', ').map(k => CAMPOS_A5[k] || k))}, mas ${falta.length > 1 ? 'faltam' : 'falta'} ${listaE(falta)}.`;
+  }
+  // B1–B6 · organograma, competências, dirigentes
+  if (s.startsWith('seção localizada, mas sem legenda de figura')) return 'A seção do organograma está no relatório, mas a figura não tem legenda de identificação (por exemplo, "Figura 1 – Organograma").';
+  if (s === 'sem fonte na figura do organograma') return 'A figura do organograma está sem fonte.';
+  if (s === 'fonte deixada com o campo-modelo do template') return 'A fonte da figura do organograma ficou com o texto-modelo do template, sem preenchimento.';
+  if (s === 'há fonte, mas sem a resolução de aprovação') return 'A figura do organograma tem fonte, mas ela não cita a resolução que aprovou a estrutura organizacional.';
+  if (s === 'não localizei o tópico 9 nem a Tabela 9') return 'Nem o tópico 9 nem a Tabela 9, com as subunidades criadas, foram localizados no relatório.';
+  if (s === 'tópico 9 ou Tabela 9 presente, mas sem dados ou declaração') return 'O tópico 9 ou a Tabela 9 está no relatório, mas sem os dados das subunidades criadas.';
+  if (s === 'menciona subunidades criadas fora do tópico 9') return 'O relatório menciona subunidades criadas, mas fora do tópico 9 e sem a Tabela 9.';
+  if (s === 'seção sem conteúdo') return 'A seção está no relatório, mas sem conteúdo.';
+  if (s === 'atribuições descritas, sem o link da normativa') return 'As atribuições das subunidades estão descritas, mas sem o link ou a referência da normativa.';
+  if (s === 'só o link/normativa, sem descrever as atribuições') return 'Há só o link ou a referência da normativa, sem a descrição das principais atribuições das subunidades.';
+  if (s === 'dirigentes informados, mas sem o Quadro 1 identificado') return 'Os dirigentes estão informados, mas não no Quadro 1 identificado com legenda.';
+  if ((m = s.match(/^(\d+) e-mail\(s\) institucional\(is\), (\d+) portaria\(s\), (\d+) data\(s\)$/))) {
+    const falta = [+m[1] < 2 && 'os e-mails institucionais', +m[2] < 2 && 'os números das portarias de designação', +m[3] < 1 && 'os períodos (datas) de cada função'].filter(Boolean);
+    return falta.length ? `O quadro dos dirigentes não traz todas as informações pedidas: faltam ${listaE(falta)}.` : 'As informações dos dirigentes estão completas, mas fora do Quadro 1 identificado.';
+  }
+  // C1–C4 · indicadores do PDU e ações não previstas
+  if (s.startsWith('Tabela 1 presente, mas resultados zerados')) return 'A Tabela 1 está no relatório, mas com os resultados zerados ou marcados como "não informado" ou "em execução".';
+  if (s.startsWith('Tabela 1 identificada, sem resultados legíveis')) return 'A Tabela 1 foi identificada, mas sem resultados legíveis; ela pode ter sido inserida como imagem.';
+  if (s === 'há percentual de desempenho geral, sem a Tabela 1 identificada') return 'Há o percentual de desempenho geral, mas sem a Tabela 1 com o resultado de cada indicador.';
+  if ((m = s.match(/^Tabela 1 com (\d) de 4 colunas do modelo(, sem fonte)?$/))) {
+    const col = 'meta, resultado, percentual de alcance e iniciativa';
+    if (+m[1] === 4) return 'A Tabela 1 segue as 4 colunas do modelo, mas está sem fonte.';
+    if (+m[1] === 3) return `A Tabela 1 tem 3 das 4 colunas do modelo (${col}) e está sem fonte.`;
+    return (+m[1] ? `A Tabela 1 tem só ${m[1]} das 4 colunas do modelo (${col})` : `A Tabela 1 não segue as colunas do modelo (${col})`) + (m[2] ? ' e está sem fonte.' : '.');
+  }
+  if (s.startsWith('dados da Tabela 1 presentes, mas sem a legenda')) return 'Os resultados dos indicadores estão no relatório, mas sem a legenda "Tabela 1 – Desempenho dos indicadores do PDU".';
+  if ((m = s.match(/^(seção 3\.1 não localizada; )?(?:(\d+) parágrafo\(s\) de análise; cobre (\d) de 5 elementos(?: \(falta: (.+)\))?|só a tabela, sem texto de análise)$/))) {
+    const pre = m[1] ? 'A seção 3.1 (Análise dos resultados) não foi localizada. ' : '';
+    if (!m[2]) return pre + 'Os resultados dos indicadores aparecem só na tabela, sem texto que os analise.';
+    const n = +m[2];
+    if (!m[4]) return `${pre}A análise tem só ${qtd(n, 'parágrafo', 'parágrafos')}; o Guia pede a análise de cada indicador.`;
+    const trata = +m[3] ? `que ${n === 1 ? 'trata' : 'tratam'} de ${m[3]} dos 5 elementos pedidos pelo Guia` : `sem nenhum dos 5 elementos pedidos pelo Guia`;
+    return `${pre}Há ${qtd(n, 'parágrafo', 'parágrafos')} de análise, ${trata}; ${+m[3] ? `não ${n === 1 ? 'aborda' : 'abordam'}` : 'faltam'} ${listaE(comArtigo(m[4]))}.`;
+  }
+  if (s === 'item 3.2 muito curto') return 'O item 3.2 está no relatório, mas é curto demais para descrever as ações.';
+  if (s === 'título do item 3.2 sem conteúdo') return 'O título do item 3.2 está no relatório, mas sem conteúdo abaixo dele.';
+  // D1, D2 · orçamento
+  if (s === 'quadro de orçamento sem identificação como Quadro 2') return 'Há um quadro de orçamento, mas sem a identificação como Quadro 2.';
+  if ((m = s.match(/^(\d+) planos internos citados, sem o Quadro 2 identificado$/))) return `Há ${m[1]} planos internos citados no texto, mas sem o Quadro 2 identificado.`;
+  if ((m = s.match(/^análises encontradas: (.+) \(seção com ~([\d.]+) caracteres\)$/))) {
+    const todas = ELEM.orc.map(e => e[0]);
+    const tem = m[1] === 'nenhuma' ? [] : m[1].split(', ');
+    const falta = todas.filter(x => !tem.includes(x));
+    let t = tem.length ? `A seção de orçamento traz ${tem.length} das 5 análises pedidas pelo Guia (${listaE(tem)}); ${falta.length > 1 ? `faltam as análises de ${listaE(falta)}` : `falta a análise de ${falta[0]}`}`
+      : `A seção de orçamento não traz nenhuma das 5 análises pedidas pelo Guia (${listaE(todas)})`;
+    if (+m[2].replace(/\D/g, '') < 400) t += `. A seção é curta, com cerca de ${m[2]} caracteres`;
+    return t + '.';
+  }
+  // E1–E12 · pessoal
+  if ((m = s.match(/^dados incompletos(?: \((.+)\))?$/))) {
+    const motivos = []; let nums = null;
+    (m[1] ? m[1].split(', ') : []).forEach(p => {
+      let k;
+      if ((k = p.match(/^(\d+) valores$/))) nums = +k[1];
+      else if ((k = p.match(/^(\d+) campo\(s\)-modelo$/))) motivos.push(`${qtd(+k[1], 'campo', 'campos')} ainda com o texto-modelo do template`);
+      else if (p === 'reticências') motivos.push('reticências (…) no lugar de dados');
+    });
+    if (nums !== null && MIN_DADOS[cod] && nums < MIN_DADOS[cod]) motivos.unshift(`poucos valores preenchidos (${nums})`);
+    if (!motivos.length) motivos.push(nums !== null ? `poucos valores preenchidos (${nums})` : 'poucos valores preenchidos');
+    return `${maiusc(nomeTabela(cod))} está incompleta: ${listaE(motivos)}.`;
+  }
+  if (s === 'tabela sem valores legíveis (vazia ou como imagem)') return `${maiusc(nomeTabela(cod))} não tem valores legíveis: está vazia ou foi inserida como imagem.`;
+  // a falta da declaração entra logo depois, pela lista DECLARA
+  if (s === 'tabela sem valores e sem a declaração de que não houve previsão') return `${maiusc(nomeTabela(cod))} está sem valores.`;
+  if (s === 'tabela sem dados legíveis') return `${maiusc(nomeTabela(cod))} está sem dados legíveis.`;
+  if (s === 'sem análise da Tabela 2') return 'Não há análise da Tabela 2: falta confrontar os servidores previstos no PDU com os em atividade e apontar os reflexos disso nas ações da unidade.';
+  if (s === 'compara previsto e em atividade, sem apontar reflexos') return 'A análise compara os servidores previstos no PDU com os em atividade, mas não aponta os reflexos nas ações da unidade.';
+  if (s === 'aponta reflexos, sem confrontar previsto e em atividade') return 'A análise aponta reflexos nas ações da unidade, mas não confronta os servidores previstos no PDU com os em atividade.';
+  if (/^(IQCD|IQCTA|ICCD|ICCTA) (ausente|só citado|calculado)( · |$)/.test(s)) {
+    const g = { calculado: [], 'só citado': [], ausente: [] };
+    s.split(' · ').forEach(p => { const k = p.match(/^(\w+) (ausente|só citado|calculado)$/); if (k) g[k[2]].push(k[1]); });
+    const os = l => listaE(l.map(x => 'o ' + x)), pl = l => l.length > 1;
+    const fr = [];
+    if (g.calculado.length) fr.push(`${os(g.calculado)} ${pl(g.calculado) ? 'estão calculados' : 'está calculado'}`);
+    if (g['só citado'].length) fr.push(`${os(g['só citado'])} ${pl(g['só citado']) ? 'são apenas citados' : 'é apenas citado'}, sem o valor calculado`);
+    if (g.ausente.length) fr.push(`${os(g.ausente)} não ${pl(g.ausente) ? 'aparecem' : 'aparece'} no relatório`);
+    return maiusc(g.calculado.length && fr.length > 1 ? fr[0] + ', mas ' + fr.slice(1).join('; ') : fr.join('; ')) + '.';
+  }
+  // F1–F8 · infraestrutura
+  if ((m = s.match(/^sem a (Tabela \d+), mas declara que não houve previsão$/))) return `Não há a ${m[1]}, só a declaração de que não houve previsão.`;
+  if (s === 'sem análise') return cod === 'F8' ? 'Não há análise dos benefícios das aquisições de TI nem relato das dificuldades.' : 'Não há análise dos benefícios das obras e reformas nem relato das dificuldades e providências.';
+  if (s === 'tabela preenchida, mas sem análise de benefícios e dificuldades') return `${maiusc(nomeTabela(cod))} está preenchida, mas não há análise dos benefícios ${cod === 'F8' ? 'das aquisições de TI nem relato das dificuldades' : 'das obras e reformas nem relato das dificuldades e providências'}.`;
+  // G1–G5 · PLS e ODS
+  if (s === 'quadro do PLS sem identificação') return 'Há um quadro do PLS, mas sem a identificação como Quadro 3.';
+  if ((m = s.match(/^(\d+) eixos do PLS citados, sem o quadro identificado$/))) return `Os eixos do PLS são citados (${m[1]}), mas sem o Quadro 3 identificado.`;
+  if ((m = s.match(/^o quadro repete as definições dos eixos do Guia \((\d+) trechos\)$/))) return `O quadro repete as definições dos eixos que estão no Guia (${m[1]} trechos), em vez de descrever as ações da unidade.`;
+  if ((m = s.match(/^poucas ações descritas(?:; (\d+) campo\(s\)-modelo)?$/))) return 'O quadro descreve poucas ações implementadas' + (m[1] ? ` e tem ${qtd(+m[1], 'campo', 'campos')} com o texto-modelo do template.` : '.');
+  if ((m = s.match(/^eixos preenchidos com campos-modelo \((\d+)\)$/))) return `Os eixos estão preenchidos com o texto-modelo do template (${qtd(+m[1], 'campo', 'campos')}), sem as ações da unidade.`;
+  if (s === 'eixos sem ações descritas') return 'Os eixos aparecem no quadro, mas sem as ações implementadas.';
+  if (s === 'sem relato de avanços ou dificuldades') return 'Não há relato dos avanços nem das dificuldades da gestão ambiental e sustentável.';
+  if ((m = s.match(/^(\d+) parágrafo\(s\) sobre avanços\/dificuldades$/))) return `Há só ${qtd(+m[1], 'parágrafo', 'parágrafos')} sobre os avanços e as dificuldades da gestão ambiental e sustentável.`;
+  if (s === 'quadro dos ODS sem identificação') return 'Há um quadro dos ODS, mas sem a identificação como Quadro 4.';
+  if (s === 'ODS listados, sem o quadro identificado') return 'Os ODS estão listados, mas sem o Quadro 4 identificado.';
+  if (s === 'ODS sem projetos vinculados') return 'Os ODS aparecem sem programas ou projetos vinculados.';
+  if (s === 'projetos citados sem link') return 'Os programas e projetos são citados, mas sem os links de consulta.';
+  if ((m = s.match(/^apenas (\d+) link\(s\) de consulta$/))) return `Há só ${qtd(+m[1], 'link', 'links')} de consulta para os programas e projetos.`;
+  // H1–H6 · cursos, empresas juniores, considerações finais
+  if ((m = s.match(/^tópico (\d+) sem a (Tabela \d+)$/))) return `O tópico ${m[1]} está no relatório, mas sem a ${m[2]}.`;
+  if (s.startsWith('instrução do template')) return 'A instrução do template ("sem dados, excluir") ficou na tabela.';
+  if ((m = s.match(/^(\d+) campo\(s\)-modelo na tabela$/))) return `${maiusc(nomeTabela(cod))} tem ${qtd(+m[1], 'campo', 'campos')} ainda com o texto-modelo do template.`;
+  if (s === 'sem relato sobre a abertura de cursos') return 'Não há relato sobre a abertura dos cursos previstos nem sobre as dificuldades que a impediram.';
+  if (s === 'tópico de Empresas Juniores sem a tabela') return 'O tópico de Empresas Juniores está no relatório, mas sem a tabela.';
+  if (s === 'só campo-modelo do template') return `${TITULO[cod] ? `A seção "${TITULO[cod]}"` : 'A seção'} tem só o texto-modelo do template, sem conteúdo da unidade.`;
+  if ((m = s.match(/^~([\d.]+) caracteres; cobre (\d) de 4 elementos(?: \(falta: (.+)\))?$/))) {
+    if (!m[3]) return `As considerações finais tratam dos 4 elementos pedidos pelo Guia, mas são curtas (cerca de ${m[1]} caracteres).`;
+    const trata = +m[2] ? `tratam de ${m[2]} dos 4 elementos pedidos pelo Guia` : 'não tratam de nenhum dos 4 elementos pedidos pelo Guia';
+    return `As considerações finais têm cerca de ${m[1]} caracteres e ${trata}; ${+m[2] ? 'não abordam' : 'faltam'} ${listaE(comArtigo(m[3]))}.`;
+  }
+  // X1, X2 · capa e referências
+  if ((m = s.match(/^falta na capa: (.+)$/))) { const f = m[1].split(', ').map(k => CAMPOS_X1[k] || k); return `${f.length > 1 ? 'Faltam' : 'Falta'} na capa ${listaE(f)}.`; }
+  if (s === 'título sem referências') return 'O título "Referências" está no relatório, mas sem referências listadas.';
+  // formas gerais
+  if ((m = s.match(/^não localizei (o|a|os|as) (.+)$/))) return `${maiusc(m[1])} ${m[2]} não ${m[1].length > 1 ? 'foram' : 'foi'} localizad${m[1]} no relatório.`;
+  if ((m = s.match(/^(.+?) não localizad(o|a|os|as)$/))) return `${maiusc(m[2])} ${m[1]} não ${m[2].length > 1 ? 'foram' : 'foi'} localizad${m[2]} no relatório.`;
+  if ((m = s.match(/^(.+?) ausente$/))) { const g = genero(m[1]); return `${maiusc(g)} ${m[1]} não foi localizad${g} no relatório.`; }
+  if ((m = s.match(/^(.+?) sem fonte$/))) { const g = genero(m[1]); return `${maiusc(g)} ${m[1]} está sem fonte.`; }
+  if ((m = s.match(/^(.+?) sem identificação no título$/))) { const g = genero(m[1]); return `${maiusc(g)} ${m[1]} está sem a identificação no título (legenda).`; }
+  return maiusc(s.replace(/ · /g, '; ')) + (/[.!?]$/.test(s) ? '' : '.');
+}
+
+// Por que o critério ficou como não atendido (0) ou atendido em parte (0,5), em frase para a unidade.
+// origem: 'regra' quando vale a verificação automática; 'avaliador' quando a revisão mudou o resultado.
+function explicarCriterio(u, cod) {
+  const v = valorCriterio(u, cod), auto = valorAuto(u, cod);
+  let aj = u.ajustes && u.ajustes[cod];
+  if (aj && typeof aj === 'object') aj = aj.v;
+  const mudou = aj !== undefined && aj !== null && aj !== auto;
+  const a = (u.auto && u.auto.crit && u.auto.crit[cod]) || {};
+  const comentario = String((u.notas || {})[cod] || '').trim();
+  let motivo, origem = 'regra';
+  if (!mudou) {
+    motivo = fraseRegra(cod, infoCriterio(u, cod)) || (v === 0 ? 'O item não foi localizado no relatório.' : 'O item está no relatório, mas incompleto.');
+    if (v === 0 && DECLARA[cod]) motivo += ` Também não há declaração de que ${DECLARA[cod]}.`;
+  } else {
+    origem = 'avaliador';
+    // a regra viu um atendimento parcial e a revisão o considerou insuficiente: o que a regra achou ainda explica a falta
+    if (auto === 0.5 && v === 0) motivo = 'Na revisão, o avaliador considerou o atendimento insuficiente. ' + fraseRegra(cod, infoCriterio(u, cod));
+    else motivo = v === 0 ? 'Marcado como não atendido na revisão do avaliador.' : 'Considerado atendido em parte na revisão do avaliador.';
+  }
+  return { cod, v, motivo, origem, comentario, ev: a.ev || null, naoAchou: origem === 'regra' && /não (foi|foram) localizad|não aparecem? no relatório/.test(motivo) };
+}
+
 /* ===================== concordância (kappa) ===================== */
 // pares: [[a,b],...]; cats: valores ordenados; tipo: 'nominal' | 'linear' | 'quadratico'
 function kappa(pares, cats, tipo) {
@@ -2168,6 +2387,7 @@ root.RAA = {
   versao: '2.0', nrm, corta, fmtN, pgsTxt, UNIDADES, CRIT, CRIT_MAP, PESOS_PADRAO, DIMS, aplicavel,
   identificar, extrairBlocos, blocosDeTexto, analisar, avaliarDocumento,
   valorAuto, valorCriterio, infoCriterio, valorDimAuto, valorDim, notas, faixa, parecer, kappa, leituraKappa,
+  fraseRegra, explicarCriterio,
 };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -2315,6 +2535,14 @@ const $ = (s, el) => (el || document).querySelector(s);
 const $$ = (s, el) => [...(el || document).querySelectorAll(s)];
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nf = n => (n === null || n === undefined || isNaN(n)) ? '—' : Number(n).toFixed(1).replace('.', ',');
+// A Helvetica do PDF só tem os caracteres do Windows-1252; o resto (símbolos, ligaduras vindas dos PDFs, emojis) vira equivalente ou espaço.
+const W1252 = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ';
+const TROCA_PDF = { 'ﬁ': 'fi', 'ﬂ': 'fl', 'ﬀ': 'ff', 'ﬃ': 'ffi', 'ﬄ': 'ffl', '−': '-', '≥': '>=', '≤': '<=', '→': '->', '\u00ad': '', '\u00a0': ' ' };
+const win = s => Array.from(String(s == null ? '' : s).normalize('NFC')).map(ch => {
+  if (TROCA_PDF[ch] !== undefined) return TROCA_PDF[ch];
+  const c = ch.codePointAt(0);
+  return c === 10 || (c >= 32 && c < 127) || (c >= 160 && c <= 255) || W1252.includes(ch) ? ch : ' ';
+}).join('');
 const uid = () => Math.random().toString(36).slice(2, 10);
 const hoje = () => new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 const ROT = { 1: 'Conforme', 0.5: 'Parcial', 0: 'Não conforme', na: 'Não se aplica' };
@@ -2653,7 +2881,7 @@ function critHTML(u) {
     blocos.push(`<div class="crit${temAj ? ' adj' : ''}" data-cod="${c.cod}">
       <div class="cod">${c.cod}</div>
       <div class="crit-txt"><div class="q">${esc(c.texto)}</div>${evid}${info ? `<div class="info">${esc(info)}</div>` : ''}
-        <input class="nota${nota || temAj ? '' : ' hidden'}" data-nota="${c.cod}" placeholder="Comentário para a devolutiva (opcional)" value="${esc(nota)}" aria-label="Comentário para a devolutiva sobre ${c.cod}"></div>
+        <input class="nota${nota || temAj ? '' : ' hidden'}" data-nota="${c.cod}" placeholder="${temAj ? 'Por que mudou? Este texto vai para a devolutiva como o motivo' : 'Comentário para a devolutiva (opcional)'}" value="${esc(nota)}" aria-label="Comentário para a devolutiva sobre ${c.cod}"></div>
       <div class="side"><div class="seg">${opts}</div><div class="auto">${esc(regra)}${temAj ? `; <b>você mudou para ${SIMNAO[aj]}</b>` : ''}.</div>${nota || temAj ? '' : `<button class="mini" data-addnota="${c.cod}">Comentar</button>`}</div>
     </div>`);
   }
@@ -2850,7 +3078,6 @@ function ligaDetalhe(u) {
     const i = ABAS.findIndex(([a]) => a === EST.aba), n = ABAS[(i + (e.key === 'ArrowRight' ? 1 : ABAS.length - 1)) % ABAS.length][0];
     mostraAba(u, n, false); const b = $(`#abas [data-aba="${n}"]`); if (b) b.focus();
   });
-  $('#detalhe').addEventListener('click', e => { const b = e.target.closest('[data-ir-aba]'); if (b) mostraAba(u, b.dataset.irAba, true); });
   const idCampo = (sel, k) => { $(sel).onchange = e => { u.ident[k] = e.target.value; u.atualizadoEm = Date.now(); salvar(); reDetalheParcial(u, true); if (k === 'ind') $('#dims').innerHTML = dimsHTML(u); if (k === 'sigla' || k === 'nome') { $('.ficha-cab h1').textContent = u.ident.sigla || 'Unidade'; $('.ficha-nome').textContent = u.ident.nome || ''; } }; };
   idCampo('#i-sigla', 'sigla'); idCampo('#i-nome', 'nome'); idCampo('#i-tipo', 'tipo'); idCampo('#i-perfil', 'perfil'); idCampo('#i-ind', 'ind');
   $$('[data-filtro]').forEach(b => b.onclick = () => { EST.filtro = b.dataset.filtro; $$('[data-filtro]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); $('#lista-crit').innerHTML = critHTML(u); });
@@ -3154,27 +3381,52 @@ function renderPendentes() {
 }
 
 /* ===================== devolutiva ===================== */
+// Referência ao Guia sem repetir a palavra "Guia" (o rótulo já diz).
+const refGuia = g => String(g || '').replace(/\(Guia, /, '(').replace(/ do Guia\b/, '');
 function dadosDevolutiva(u) {
   const n = notas(u), p = R.parecer(u, EST.cfg), id = u.ident;
   const ano = (u.auto && u.auto.ano) || EST.cfg.ano;
-  const pg = c => { const a = u.auto.crit[c.cod]; return a && a.ev && a.ev.pg ? ` (p. ${a.ev.pg} do relatório)` : ''; };
-  const lacunas = p.zero.map(c => ({ guia: c.guia, texto: c.texto, nota: (u.notas || {})[c.cod] || '', pg: pg(c) }));
-  const parciais = [...new Set(p.parc.map(c => c.guia))];
+  const ativos = R.CRIT.filter(c => !(c.extra && EST.cfg.complementares === false));
+  // quanto cada critério pesou: os pontos que a conformidade (e a nota final) deixou de ganhar com ele
+  const pesos = Object.assign({}, R.PESOS_PADRAO, EST.cfg.pesos || {});
+  const somaPesos = ativos.reduce((a, c) => { const v = R.valorCriterio(u, c.cod), w = +pesos[c.cod] || 0; return a + (v !== null && v !== undefined && w > 0 ? w : 0); }, 0);
+  const alfa = EST.cfg.alfa === undefined ? 0.5 : EST.cfg.alfa;
+  const detalhe = c => {
+    const x = R.explicarCriterio(u, c.cod), w = +pesos[c.cod] || 0;
+    const perda = somaPesos && w > 0 ? 100 * w * (1 - x.v) / somaPesos : 0;
+    return { cod: c.cod, topico: c.topico, guia: refGuia(c.guia), texto: c.texto, motivo: x.motivo, origem: x.origem, nota: x.comentario,
+      ev: x.ev && x.ev.pg ? { pg: x.ev.pg, txt: R.corta(x.ev.txt || '', 150) } : null, naoAchou: x.naoAchou, peso: w, perdaConf: perda, perdaNota: alfa * perda };
+  };
+  const lacunas = p.zero.map(detalhe), parciais = p.parc.map(detalhe);
+  // itens dados como não localizados num PDF com páginas em imagem: a unidade precisa saber que a leitura pode ter falhado ali
+  const img = ((u.auto && u.auto.achados) || []).find(a => a.tipo === 'imagem' || a.tipo === 'vazias');
+  const avisoImagem = img && lacunas.concat(parciais).some(l => l.naoAchou)
+    ? `${plural(img.n, 'página', 'páginas')} do relatório não ${img.n === 1 ? 'tem' : 'têm'} texto pesquisável (${R.pgsTxt(img.pgs)}). Se algum item dado como não localizado estiver nessas páginas, como imagem, a verificação não conseguiu lê-lo.` : '';
+  const semComentario = lacunas.concat(parciais).filter(l => l.origem === 'avaliador' && !l.nota).map(l => l.cod);
   const recs = p.recs.map(r => r[0].toUpperCase() + r.slice(1) + '.');
   const alertas = ((u.auto && u.auto.achados) || []).filter(a => a.tipo !== 'anoModelo').map(a => `${a.titulo} (${a.n} ocorrência(s), ${R.pgsTxt(a.pgs)}).`);
   if (u.semTexto) alertas.unshift('Documento entregue como imagem digitalizada, sem texto pesquisável.');
-  const ativos = R.CRIT.filter(c => !(c.extra && EST.cfg.complementares === false));
   const ficha = ativos.map(c => ({ cod: c.cod, texto: c.texto, v: R.valorCriterio(u, c.cod) })).filter(x => x.v !== null);
   const pers = Object.keys(Object.assign({}, R.PESOS_PADRAO, EST.cfg.pesos)).some(k => (EST.cfg.pesos[k] !== undefined) && +EST.cfg.pesos[k] !== R.PESOS_PADRAO[k]);
   const metodo = `A verificação aplica os critérios da lista oficial de avaliação que podem ser aferidos no documento entregue, conforme o Guia para elaboração do Relato Anual dos Resultados da Unidade${EST.cfg.complementares !== false ? ', mais dois critérios complementares (capa e referências)' : ''}. Cada critério é pontuado como conforme (1), parcial (0,5) ou não conforme (0), e a conformidade técnica é a média ponderada pelos pesos ${pers ? 'definidos pela Dinfi para este exercício' : 'padrão (3 para análises e itens centrais, 2 para tabelas e dados, 1 para elementos formais)'}. A leitura qualitativa pontua de 0 a 4 as oito dimensões de análise exigidas pelo Guia. A nota final combina ${Math.round(EST.cfg.alfa * 100)}% da conformidade e ${100 - Math.round(EST.cfg.alfa * 100)}% da qualidade. Prazo de entrega, Gestão do PDU, Anexos e Formulários Específicos são registros do Sinpeg e não fazem parte desta verificação.${u.revisado ? ' O resultado automático foi revisado por avaliador da Dinfi.' : ''}`;
-  return { n, p, id, ano, lacunas, parciais, recs, alertas, ficha, metodo, obs: (u.obs || '').trim() };
+  return { n, p, id, ano, lacunas, parciais, avisoImagem, semComentario, recs, alertas, ficha, metodo, obs: (u.obs || '').trim() };
 }
+// Frases do bloco de lacunas, as mesmas na tela, no PDF e na planilha.
+const introLacunas = k => `${k === 1 ? '1 critério ficou' : `${k} critérios ficaram`} como não ${k === 1 ? 'atendido' : 'atendidos'}. Em cada um: o que o critério pede, por que foi marcado como lacuna e quanto pesou na nota.`;
+const linhaPeso = l => l.peso > 0
+  ? `Peso ${l.peso} no cálculo: tirou ${nf(l.perdaConf)} ${+nf(l.perdaConf).replace(',', '.') < 2 ? 'ponto' : 'pontos'} da conformidade técnica (${nf(l.perdaNota)} da nota final).`
+  : 'Peso zero neste exercício: não entra no cálculo da nota.';
+const linhaTrecho = l => l.ev ? `p. ${l.ev.pg} do relatório: “${l.ev.txt}”` : '';
+const resumoLacuna = l => `${l.cod} · ${l.topico}: ${l.motivo}${l.nota ? ` Comentário do avaliador: ${l.nota}` : ''}`;
 function montarDevolutiva(u, rolar) {
   const d = dadosDevolutiva(u);
   const area = $('#area-rep');
+  const sc = d.semComentario;
   area.innerHTML = `<div class="card rep-barra noprint"><div class="card-cab"><div><h2>Devolutiva</h2>
     <p class="cap">Ela acompanha os ajustes: se mudar um critério ou uma nota, o texto se atualiza aqui.</p></div>
-    <div class="row"><button id="btn-pdf">Baixar PDF</button><button class="ghost" id="btn-print">Imprimir</button></div></div></div>
+    <div class="row"><button id="btn-pdf">Baixar PDF</button><button class="ghost" id="btn-print">Imprimir</button></div></div>
+    ${sc.length ? `<div class="rep-falta"><p>${sc.length === 1 ? `Você mudou o critério ${sc[0]} e não escreveu o motivo` : `Você mudou os critérios ${sc.slice(0, -1).join(', ')} e ${sc[sc.length - 1]} e não escreveu os motivos`}. Sem comentário, a devolutiva só informa que a mudança veio da revisão.</p>
+      <button type="button" class="quiet" data-ver-ajustados>Escrever ${sc.length === 1 ? 'o motivo' : 'os motivos'}</button></div>` : ''}</div>
   <div class="rep" id="rep">
     <div class="head"><div><div class="rep-org">Universidade Federal do Pará, Proplan, Diretoria de Informações Institucionais</div><h2>Devolutiva do Relatório Anual de Atividades</h2>
       <div class="rep-sub">Exercício ${d.ano}, ${esc(d.id.nome || '')} (${esc(d.id.sigla || '')})</div></div>
@@ -3182,8 +3434,23 @@ function montarDevolutiva(u, rolar) {
     <p class="rep-res"><span><strong>Perfil:</strong> ${esc(d.id.perfil)}, ${esc(String(d.id.ind).toLowerCase())}</span><span><strong>Conformidade técnica:</strong> ${nf(d.n.conf)}</span><span><strong>Avaliação qualitativa:</strong> ${nf(d.n.qual)}</span></p>
     <h4>Como esta avaliação foi feita</h4><p>${esc(d.metodo)}</p>
     <h4>Pontos fortes</h4><p>${esc(d.p.fortes)}</p>
-    <h4>Lacunas identificadas</h4>${d.lacunas.length ? `<ul>${d.lacunas.map(l => `<li><strong>${esc(l.guia)}</strong> — ${esc(l.texto)}${esc(l.pg)}${l.nota ? `<br><em>${esc(l.nota)}</em>` : ''}</li>`).join('')}</ul>` : '<p>Não foram identificadas lacunas nos critérios verificáveis.</p>'}
-    ${d.parciais.length ? `<p><strong>Atendimento parcial em:</strong> ${d.parciais.map(esc).join('; ')}.</p>` : ''}
+    <h4>Lacunas identificadas</h4>
+    <p class="rep-intro">${d.lacunas.length ? esc(introLacunas(d.lacunas.length)) : 'Não foram identificadas lacunas nos critérios verificáveis.'}</p>
+    ${d.avisoImagem ? `<p class="rep-aviso">${esc(d.avisoImagem)}</p>` : ''}
+    ${d.lacunas.length ? `<ol class="lacunas">${d.lacunas.map(l => `<li class="lac">
+      <div class="lac-cab"><span class="lac-cod">${l.cod}</span><span class="lac-tit">${esc(l.topico)}</span><span class="lac-guia">Guia: ${esc(l.guia)}</span></div>
+      <dl class="lac-dl">
+        <dt>Critério</dt><dd>${esc(l.texto)}</dd>
+        <dt>Por que é lacuna</dt><dd class="lac-motivo">${esc(l.motivo)}</dd>
+        ${l.ev ? `<dt>Trecho verificado</dt><dd>${esc(linhaTrecho(l))}</dd>` : ''}
+        ${l.nota ? `<dt>Comentário do avaliador</dt><dd>${esc(l.nota)}</dd>` : ''}
+        <dt>Peso na nota</dt><dd>${esc(linhaPeso(l))}</dd>
+      </dl></li>`).join('')}</ol>` : ''}
+    ${d.parciais.length ? `<h5 class="rep-h5">Atendidos em parte</h5>
+    <ul class="lacunas">${d.parciais.map(l => `<li class="lac lac-parc">
+      <div class="lac-cab"><span class="lac-cod">${l.cod}</span><span class="lac-tit">${esc(l.topico)}</span><span class="lac-guia">Guia: ${esc(l.guia)}</span></div>
+      <p class="lac-motivo">${esc(l.motivo)}${l.ev ? ` <span class="lac-pg">(p. ${l.ev.pg} do relatório)</span>` : ''}</p>
+      ${l.nota ? `<p class="lac-com"><b>Comentário do avaliador:</b> ${esc(l.nota)}</p>` : ''}</li>`).join('')}</ul>` : ''}
     ${d.alertas.length ? `<h4>Alertas de integridade</h4><ul>${d.alertas.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}
     <h4>Recomendações para o próximo exercício</h4>${d.recs.length ? `<ul>${d.recs.map(r => `<li>${esc(r)}</li>`).join('')}</ul>` : '<p>Manter o padrão do relatório e aprofundar as análises dos tópicos com menor pontuação.</p>'}
     ${d.obs ? `<h4>Observações do avaliador</h4><p>${esc(d.obs).replace(/\n/g, '<br>')}</p>` : ''}
@@ -3205,29 +3472,70 @@ function montarPdf(u) {
   const d = dadosDevolutiva(u);
   let y = M.topo;
   const quebra = alt => { if (y + alt > 297 - M.base) { doc.addPage(); y = M.topo; } };
+  const pagina = () => doc.internal.getCurrentPageInfo().pageNumber;
   const txt = (s, o) => {
     o = Object.assign({ size: 10, style: 'normal', cor: [64, 83, 75], larg: LARG, espaco: 4.6, depois: 2, x: M.e }, o || {});
     doc.setFont('helvetica', o.style); doc.setFontSize(o.size); doc.setTextColor(...o.cor);
-    doc.splitTextToSize(String(s), o.larg).forEach(l => { quebra(o.espaco); doc.text(l, o.x, y); y += o.espaco; });
+    doc.splitTextToSize(win(s), o.larg).forEach(l => { quebra(o.espaco); doc.text(l, o.x, y); y += o.espaco; });
     y += o.depois;
   };
   const secao = t => {
     quebra(14); y += 3;
     doc.setDrawColor(220, 227, 222); doc.setLineWidth(0.2); doc.line(M.e, y - 3, 210 - M.d, y - 3);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(98, 118, 110);
-    doc.text(String(t).toUpperCase(), M.e, y + 1); y += 6;
+    doc.text(win(t).toUpperCase(), M.e, y + 1); y += 6;
   };
   const itens = arr => arr.forEach(s => {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(64, 83, 75);
-    doc.splitTextToSize(String(s), LARG - 5).forEach((l, i) => { quebra(4.6); if (i === 0) doc.text('•', M.e, y); doc.text(l, M.e + 5, y); y += 4.6; });
+    doc.splitTextToSize(win(s), LARG - 5).forEach((l, i) => { quebra(4.6); if (i === 0) doc.text('•', M.e, y); doc.text(l, M.e + 5, y); y += 4.6; });
     y += 1.4;
   });
+  // Um critério por bloco: código e tópico, a referência ao Guia e, à esquerda, uma barra vermelha (não atendido) ou âmbar (em parte).
+  // As lacunas trazem as linhas rotuladas; os parciais, só o motivo.
+  const RX = M.e + 4, RW = 33, VX = M.e + 40, VW = LARG - 40, LH = 4.3;
+  const linhasTxt = (s, larg, alt) => doc.splitTextToSize(win(s), larg).forEach(t => { quebra(alt); doc.text(t, RX, y); y += alt; });
+  const criterio = (l, completo) => {
+    quebra(completo ? 30 : 16);
+    const ini = { pg: pagina(), y: y - 3.4 };
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(18, 32, 28);
+    linhasTxt(`${l.cod} · ${l.topico}`, LARG - 4, 4.6);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(98, 118, 110);
+    linhasTxt('Guia: ' + l.guia, LARG - 4, 3.9);
+    y += 1.4;
+    if (completo) {
+      [['Critério', l.texto], ['Por que é lacuna', l.motivo], l.ev && ['Trecho verificado', linhaTrecho(l)], l.nota && ['Comentário do avaliador', l.nota], ['Peso na nota', linhaPeso(l)]].filter(Boolean).forEach(([rot, val]) => {
+        const forte = rot === 'Por que é lacuna';
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.3); const r = doc.splitTextToSize(win(rot), RW);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); const v = doc.splitTextToSize(win(val), VW);
+        const n = Math.max(r.length, v.length);
+        quebra(Math.min(n, 2) * LH);
+        for (let i = 0; i < n; i++) {
+          quebra(LH);
+          if (r[i]) { doc.setFont('helvetica', 'bold'); doc.setFontSize(8.3); doc.setTextColor(98, 118, 110); doc.text(r[i], RX, y); }
+          if (v[i]) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...(forte ? [18, 32, 28] : [64, 83, 75])); doc.text(v[i], VX, y); }
+          y += LH;
+        }
+        y += 1;
+      });
+    } else {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(18, 32, 28);
+      linhasTxt(l.motivo + (l.ev ? ` (p. ${l.ev.pg} do relatório)` : ''), LARG - 4, LH);
+      if (l.nota) { doc.setFont('helvetica', 'italic'); doc.setTextColor(64, 83, 75); linhasTxt('Comentário do avaliador: ' + l.nota, LARG - 4, LH); }
+    }
+    const fim = { pg: pagina(), y: y - 2.4 };
+    for (let pg = ini.pg; pg <= fim.pg; pg++) {
+      doc.setPage(pg); doc.setDrawColor(...(completo ? [185, 58, 56] : [176, 125, 10])); doc.setLineWidth(0.9);
+      doc.line(M.e + 0.6, pg === ini.pg ? ini.y : M.topo - 3.4, M.e + 0.6, pg === fim.pg ? fim.y : 297 - M.base);
+    }
+    doc.setPage(fim.pg);
+    y += 4;
+  };
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(98, 118, 110);
   doc.text('UNIVERSIDADE FEDERAL DO PARÁ · PROPLAN / DINFI', M.e, y); y += 7;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(18, 32, 28);
   doc.text('Devolutiva do Relatório Anual de Atividades', M.e, y); y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(64, 83, 75);
-  doc.splitTextToSize(`Exercício ${d.ano} · ${d.id.nome || ''} (${d.id.sigla || ''})`, LARG - 40).forEach(l => { doc.text(l, M.e, y); y += 4.6; });
+  doc.splitTextToSize(win(`Exercício ${d.ano} · ${d.id.nome || ''} (${d.id.sigla || ''})`), LARG - 40).forEach(l => { doc.text(l, M.e, y); y += 4.6; });
   doc.setDrawColor(0, 105, 94); doc.setLineWidth(0.7); doc.line(M.e, y, 210 - M.d, y); y += 3;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(98, 118, 110);
   doc.text('NOTA FINAL', 210 - M.d, M.topo, { align: 'right' });
@@ -3240,9 +3548,14 @@ function montarPdf(u) {
   secao('Como esta avaliação foi feita'); txt(d.metodo);
   secao('Pontos fortes'); txt(d.p.fortes);
   secao('Lacunas identificadas');
-  if (d.lacunas.length) itens(d.lacunas.map(l => `${l.guia} — ${l.texto}${l.pg}${l.nota ? ` Nota do avaliador: ${l.nota}` : ''}`));
-  else txt('Não foram identificadas lacunas nos critérios verificáveis.');
-  if (d.parciais.length) txt('Atendimento parcial em: ' + d.parciais.join('; ') + '.');
+  txt(d.lacunas.length ? introLacunas(d.lacunas.length) : 'Não foram identificadas lacunas nos critérios verificáveis.', d.lacunas.length ? { size: 9.5, cor: [98, 118, 110], depois: 3 } : {});
+  if (d.avisoImagem) txt(d.avisoImagem, { size: 9, cor: [140, 95, 10], depois: 3 });
+  d.lacunas.forEach(l => criterio(l, true));
+  if (d.parciais.length) {
+    quebra(22); y += 1;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(18, 32, 28); doc.text('Atendidos em parte', M.e, y); y += 6.5;
+    d.parciais.forEach(l => criterio(l, false));
+  }
   if (d.alertas.length) { secao('Alertas de integridade'); itens(d.alertas); }
   secao('Recomendações para o próximo exercício');
   if (d.recs.length) itens(d.recs); else txt('Manter o padrão do relatório e aprofundar as análises dos tópicos com menor pontuação.');
@@ -3270,7 +3583,7 @@ function montarPdf(u) {
   const tot = doc.getNumberOfPages();
   for (let i = 1; i <= tot; i++) {
     doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(98, 118, 110);
-    doc.text(`${d.id.sigla || ''} · Devolutiva do RAA ${d.ano}`, M.e, 287); doc.text(`${i} de ${tot}`, 210 - M.d, 287, { align: 'right' });
+    doc.text(win(`${d.id.sigla || ''} · Devolutiva do RAA ${d.ano}`), M.e, 287); doc.text(`${i} de ${tot}`, 210 - M.d, 287, { align: 'right' });
   }
   return doc;
 }
@@ -3291,8 +3604,8 @@ function planilha() {
   const qual = [[{ v: 'Qualidade detalhada', s: 4 }], ['Escala 0 a 4: 0 ausente · 1 meramente descritiva · 2 superficial · 3 consistente · 4 crítica completa'], [],
     ['Sigla', 'Unidade', ...R.DIMS.map(d => `${d.cod} · ${d.nome}`), 'Qualidade']];
   ord.forEach(u => qual.push([u.ident.sigla, u.ident.nome, ...R.DIMS.map(d => { const v = R.valorDim(u, d.cod); return v === null ? 'N/A' : v; }), { v: notas(u).qual, s: 3 }]));
-  const par = [[{ v: 'Pareceres', s: 4 }], [], [], ['Sigla', 'Unidade', 'Nota final', 'Faixa', 'Pontos fortes', 'Lacunas identificadas', 'Recomendações', 'Observação do avaliador']];
-  ord.forEach(u => { const d = dadosDevolutiva(u); par.push([u.ident.sigla, u.ident.nome, { v: d.n.nota, s: 3 }, d.n.fx, d.p.fortes, d.lacunas.map(l => `• ${l.guia} — ${l.texto}${l.nota ? ' (' + l.nota + ')' : ''}`).join('\n'), d.recs.join(' '), d.obs]); });
+  const par = [[{ v: 'Pareceres', s: 4 }], [], [], ['Sigla', 'Unidade', 'Nota final', 'Faixa', 'Pontos fortes', 'Lacunas identificadas e motivos', 'Atendidos em parte e o que faltou', 'Recomendações', 'Observação do avaliador']];
+  ord.forEach(u => { const d = dadosDevolutiva(u); par.push([u.ident.sigla, u.ident.nome, { v: d.n.nota, s: 3 }, d.n.fx, d.p.fortes, d.lacunas.map(l => '• ' + resumoLacuna(l)).join('\n'), d.parciais.map(l => '• ' + resumoLacuna(l)).join('\n'), d.recs.join(' '), d.obs]); });
   const evid = [['Sigla', 'Código', 'Critério', 'Regra', 'Final', 'Ajustado', 'Página', 'Trecho localizado', 'Leitura da regra', 'Nota do avaliador']];
   ord.forEach(u => ativos.forEach(c => { const a = u.auto.crit[c.cod] || {}; const au = R.valorAuto(u, c.cod), fi = R.valorCriterio(u, c.cod); evid.push([u.ident.sigla, c.cod, c.texto, au === null ? 'N/A' : au, fi === null ? 'N/A' : fi, (u.ajustes || {})[c.cod] !== undefined ? 'sim' : '', a.ev ? a.ev.pg : '', a.ev ? a.ev.txt : '', R.infoCriterio(u, c.cod), (u.notas || {})[c.cod] || '']); }));
   const ach = [['Sigla', 'Alerta', 'Ocorrências', 'Páginas', 'Exemplo']];
@@ -3307,7 +3620,7 @@ function planilha() {
     { nome: 'Resumo', linhas: resumo, cabecalhos: [3], congelar: 4, larguras: [5, 16, 46, 18, 14, 8, 13, 11, 10, 12, 14, 12, 10, 30] },
     { nome: 'Conformidade detalhada', linhas: conf, cabecalhos: [5], congelar: 6, larguras: [16, 40, ...ativos.map(() => 6), 12] },
     { nome: 'Qualidade detalhada', linhas: qual, cabecalhos: [3], congelar: 4, larguras: [16, 40, ...R.DIMS.map(() => 14), 10] },
-    { nome: 'Pareceres', linhas: par, cabecalhos: [3], congelar: 4, larguras: [14, 36, 9, 12, 60, 80, 60, 50] },
+    { nome: 'Pareceres', linhas: par, cabecalhos: [3], congelar: 4, larguras: [14, 36, 9, 12, 50, 90, 80, 55, 45] },
     { nome: 'Evidências', linhas: evid, cabecalhos: [0], congelar: 1, larguras: [14, 7, 60, 7, 7, 8, 7, 70, 60, 40] },
     { nome: 'Alertas', linhas: ach, cabecalhos: [0], congelar: 1, larguras: [14, 60, 10, 20, 70] },
     { nome: 'Metodologia', linhas: met, larguras: [22, 120] },
@@ -3333,7 +3646,7 @@ function dadosPainel() {
   const r1 = x => Math.round(x * 10) / 10;
   const media = (l, k) => l.length ? r1(l.reduce((a, u) => a + notas(u)[k], 0) / l.length) : 0;
   const grupo = (nome, l) => ({ nome, n: l.length, conf: media(l, 'conf'), qual: media(l, 'qual'), nota: media(l, 'nota') });
-  const unidades = us.map(u => { const d = dadosDevolutiva(u); return { sigla: u.ident.sigla, nome: u.ident.nome, perfil: u.ident.perfil, ind: u.ident.ind, pag: u.paginas, conf: d.n.conf, qual: d.n.qual, nota: d.n.nota, faixa: d.n.fx, dim: R.DIMS.map(x => R.valorDim(u, x.cod)), fortes: d.p.fortes, lacunas: d.lacunas.map(l => `• Não atendido — ${l.guia}: ${l.texto}`).join(' ') + (d.parciais.length ? ` • Atendimento parcial em: ${d.parciais.join('; ')}.` : ''), rec: d.recs.length ? 'Recomenda-se: ' + d.recs.map(r => r.replace(/\.$/, '').replace(/^./, c => c.toLowerCase())).join('; ') + '.' : '', obs: d.obs }; });
+  const unidades = us.map(u => { const d = dadosDevolutiva(u); return { sigla: u.ident.sigla, nome: u.ident.nome, perfil: u.ident.perfil, ind: u.ident.ind, pag: u.paginas, conf: d.n.conf, qual: d.n.qual, nota: d.n.nota, faixa: d.n.fx, dim: R.DIMS.map(x => R.valorDim(u, x.cod)), fortes: d.p.fortes, lacunas: d.lacunas.map(l => `• Não atendido — ${l.guia}: ${l.texto}`).join(' ') + (d.parciais.length ? ` • Atendimento parcial em: ${[...new Set(d.parciais.map(l => l.guia))].join('; ')}.` : ''), rec: d.recs.length ? 'Recomenda-se: ' + d.recs.map(r => r.replace(/\.$/, '').replace(/^./, c => c.toLowerCase())).join('; ') + '.' : '', obs: d.obs }; });
   const ativos = R.CRIT.filter(c => !(c.extra && EST.cfg.complementares === false));
   const criterios = ativos.map(c => { const vs = us.map(u => R.valorCriterio(u, c.cod)).filter(v => v !== null); return { cod: c.cod, topico: c.topico, texto: c.texto, taxa: vs.length ? r1(100 * vs.reduce((a, b) => a + b, 0) / vs.length) : 0, n: vs.length }; }).sort((a, b) => a.taxa - b.taxa);
   const faixas = {}; us.forEach(u => { const f = notas(u).fx; faixas[f] = (faixas[f] || 0) + 1; });
@@ -3568,6 +3881,21 @@ $('#painel-resumo').addEventListener('click', e => { const b = e.target.closest(
 $('#filtro-faixa').addEventListener('click', e => { if (e.target.closest('[data-limpa-fx]')) { EST.filtroFaixa = null; renderResumo(); renderTabela(); } });
 $('#busca').addEventListener('input', e => { EST.busca = e.target.value; renderTabela(); });
 $('#filtro-lista').addEventListener('click', e => { const b = e.target.closest('[data-fl]'); if (!b) return; EST.filtroLista = b.dataset.fl; renderTabela(); });
+// A ficha é redesenhada a cada unidade aberta; este ouvinte fica só um, sempre ligado à unidade aberta.
+$('#detalhe').addEventListener('click', e => {
+  const u = unid(EST.aberta); if (!u) return;
+  const b = e.target.closest('[data-ir-aba]');
+  if (b) { mostraAba(u, b.dataset.irAba, true); return; }
+  if (e.target.closest('[data-ver-ajustados]')) {
+    // leva aos critérios que o avaliador mudou, com o cursor no primeiro comentário em branco
+    EST.filtro = 'ajustados';
+    $$('[data-filtro]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.filtro === 'ajustados')));
+    $('#lista-crit').innerHTML = critHTML(u);
+    mostraAba(u, 'crit', true);
+    const vazio = $$('#lista-crit input[data-nota]').find(i => !i.value.trim());
+    if (vazio) setTimeout(() => vazio.focus(), 350);
+  }
+});
 $('#btn-xlsx').onclick = exportarPlanilha;
 $('#btn-ia-lote').onclick = lerTodosComIA;
 $('#ia-pend').addEventListener('click', e => {
