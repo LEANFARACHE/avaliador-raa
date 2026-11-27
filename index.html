@@ -1268,8 +1268,10 @@ const CRIT = [
     'informar a previsão de expansão do espaço físico ou declarar que não houve'],
   ['F3', '6 Infraestrutura', 'Infraestrutura Física', 'Foi inserida a área/quantidade concluída até o ano-base?', '6.1 Infraestrutura Física (p. 21)', 2,
     'informar o concluído até o ano-base'],
-  ['F9', '6 Infraestrutura', 'Infraestrutura Física', 'Foram informados os recursos de acessibilidade previstos e concluídos na tabela de espaço físico?', '6.1 Infraestrutura Física, recursos de acessibilidade (p. 21)', 1,
-    'informar na tabela de espaço físico a quantidade de recursos de acessibilidade previstos e concluídos'],
+  ['F9', '6 Infraestrutura', 'Infraestrutura Física', 'Foi informada a quantidade de recursos de acessibilidade prevista para a vigência do plano?', '6.1 Infraestrutura Física, recursos de acessibilidade (p. 21)', 1,
+    'informar na tabela de espaço físico a quantidade de recursos de acessibilidade prevista para a vigência do plano'],
+  ['F10', '6 Infraestrutura', 'Infraestrutura Física', 'Foi informada a quantidade de recursos de acessibilidade concluída até o ano-base?', '6.1 Infraestrutura Física, recursos de acessibilidade (p. 21)', 1,
+    'informar na tabela de espaço físico a quantidade de recursos de acessibilidade concluída até o ano-base'],
   ['F4', '6 Infraestrutura', 'Infraestrutura Física', 'Foram identificados os benefícios das obras/reformas e relatadas as dificuldades e providências?', '6.1 Análise da infraestrutura física (p. 21)', 2,
     'relatar os benefícios das obras concluídas, as dificuldades e as providências adotadas, e justificar ampliações fora do PDU'],
   ['F5', '6 Infraestrutura', 'Infraestrutura de TI', 'Foi inserida a tabela de expansão da infraestrutura de TI, com a fonte, ou declarado que não houve previsão?', '6.2 Infraestrutura de Tecnologia da Informação (p. 22)', 2,
@@ -1362,9 +1364,21 @@ async function extrairBlocos(pdfjsLib, data, onProg) {
       t = t.replace(/\s+/g, ' ').trim();
       if (!t) continue;
       chars += t.length;
+      // células: trechos separados por um vão maior que o de uma palavra; o centro x diz a coluna da tabela
+      const cel = [];
+      let f2 = null;
+      for (const w of ln.it) {
+        const gap = f2 === null ? Infinity : w.x - f2;
+        if (cel.length && gap <= ln.h * 0.5) { const k = cel[cel.length - 1]; k.s += (gap > ln.h * 0.15 ? ' ' : '') + w.s; k.x1 = w.x + w.w; }
+        else cel.push({ x0: w.x, x1: w.x + w.w, s: w.s });
+        f2 = w.x + w.w;
+      }
+      const cels = cel.map(k => [Math.round((k.x0 + k.x1) / 2), k.s.replace(/\s+/g, ' ').trim()]).filter(k => k[1]);
+      const comCel = cels.length >= 2 || t.length <= 60;
       const junta = cur && cur.ult > 62 && !/[.:;!?]$/.test(cur.t) && (cur.y - ln.y) < ln.h * 2.2;
-      if (junta) { cur.t += ' ' + t; cur.y = ln.y; cur.ult = t.length; }
-      else { cur = { pg: p, t, y: ln.y, ult: t.length }; out.push(cur); }
+      // na linha juntada (legenda longa seguida do cabeçalho da tabela, por exemplo) as células continuam valendo
+      if (junta) { cur.t += ' ' + t; cur.y = ln.y; cur.ult = t.length; if (comCel && cels.length >= 2) { cur.c = (cur.c || []).concat(cels); cur.h = Math.max(cur.h || 0, ln.h); } }
+      else { cur = { pg: p, t, y: ln.y, ult: t.length }; if (comCel) { cur.c = cels; cur.h = ln.h; } out.push(cur); }
     }
     if (chars < 40) vazias.push(p);
     page.cleanup && page.cleanup();
@@ -1372,7 +1386,7 @@ async function extrairBlocos(pdfjsLib, data, onProg) {
   }
   const paginas = pdf.numPages;
   try { await pdf.destroy(); } catch (e) { /* ignora */ }
-  return { blocos: out.map(b => ({ pg: b.pg, t: b.t })), paginas, vazias };
+  return { blocos: out.map(b => (b.c ? { pg: b.pg, t: b.t, c: b.c, h: Math.round(b.h * 10) / 10 } : { pg: b.pg, t: b.t })), paginas, vazias };
 }
 
 function blocosDeTexto(txt) {
@@ -1526,8 +1540,10 @@ function ehProsa(b, min) {
   return dig / b.n.length < 0.12 && b.n.split(' ').length >= 22;
 }
 function analisar(blocos, ano) {
-  const B = blocos.map((b, i) => ({ i, pg: b.pg, t: b.t, n: nrm(b.t) }));
+  const B = blocos.map((b, i) => (b.c ? { i, pg: b.pg, t: b.t, n: nrm(b.t), c: b.c, h: b.h } : { i, pg: b.pg, t: b.t, n: nrm(b.t) }));
   const paginas = B.length ? B[B.length - 1].pg : 0;
+  // número de página (bloco só com 1 a 3 dígitos no começo ou no fim da página): não é dado de tabela
+  B.forEach((b, i) => { if (/^\d{1,3}$/.test(b.n) && ((B[i + 1] && B[i + 1].pg !== b.pg) || !B[i + 1] || (B[i - 1] && B[i - 1].pg !== b.pg))) b.pgnum = true; });
   // 1) páginas de índice (sumário e listas)
   const porPg = {};
   B.forEach(b => (porPg[b.pg] = porPg[b.pg] || []).push(b));
@@ -1601,6 +1617,81 @@ function analisar(blocos, ano) {
   return { B, paginas, indice, heads, secao, blocosDe, caps, melhorCap, full, todo, achaBloco, blocosCom, pgsCom, prosa, ano };
 }
 
+/* ===================== tabelas: leitura por coluna ===================== */
+// Cada coluna de dados é achada pelo centro do seu cabeçalho ("Informado no PDU", "Concluído até o ano-base"...);
+// cada célula das linhas abaixo vai para a coluna de centro mais próximo. Assim o previsto e o realizado
+// são conferidos em separado. Devolve null quando o texto não tem posições (texto colado) ou não há cabeçalho.
+const CAB_RE = /^(quantidade|area\b|informado|em atividade|em 20\d\d|20\d\d\W*$|vigencia|previsao|previst|concluid|realizad|adquirid|acumulad|no pdu|pdu\b|do plano|ano-base|ate o|exercicio|docentes?|tecnico|capacitad|modalidade)/;
+function colunasTabela(bs, specs, centrosDados) {
+  const comCel = bs.filter(b => b.c && b.c.length);
+  if (!comCel.length) return null;
+  // linhas só de sobrescrito (o "2" de m², notas ¹ ²) têm letra menor: não são dados
+  const hs = comCel.map(b => b.h || 0).filter(Boolean).sort((x, y) => x - y);
+  const hMed = hs.length ? hs[Math.floor(hs.length / 2)] : 0;
+  const miuda = b => hMed && b.h && b.h < hMed * 0.72;
+  let centros = centrosDados ? centrosDados.slice() : [];
+  const ehCab = new Set();
+  // fim da tabela: a fonte ou as notas de rodapé ("¹ Previsão Acumulada: ...", "1 - Previsão ...")
+  const fimTabela = b => /^(fonte\b|[¹²³*]|\(\.\.\.\))/.test(b.n) || (/^\d\s?-\s/.test(b.n) && b.n.length > 60);
+  if (!centrosDados) {
+    // o cabeçalho fica antes da fonte e das notas de rodapé (que repetem "¹ Informado no PDU: ...")
+    const ate = comCel.findIndex(fimTabela);
+    (ate < 0 ? comCel : comCel.slice(0, ate)).forEach(b => b.c.forEach(([x, s]) => {
+      if (/^[¹²³*]/.test(s)) return;
+      const n = nrm(s).replace(/^[^a-z]+/, '');
+      if (n.length > 50) return;
+      for (const k in specs) if (specs[k].test(n)) {
+        ehCab.add(b);
+        if (!centros.some(c => c.k === k && Math.abs(c.x - x) < 25)) centros.push({ k, x });
+      }
+    }));
+  }
+  if (!centros.length) return null;
+  const xs = centros.map(c => c.x).sort((x, y) => x - y);
+  let menor = Infinity;
+  for (let i = 1; i < xs.length; i++) menor = Math.min(menor, xs[i] - xs[i - 1]);
+  const tol = Math.max(25, Math.min(90, isFinite(menor) ? menor * 0.55 : 90));
+  // por coluna física: valores preenchidos e campos-modelo
+  const fis = centros.map(() => ({ valores: 0, nums: 0, ph: 0 }));
+  let linhas = 0;
+  const primeiro = centrosDados ? 0 : comCel.findIndex(b => ehCab.has(b));
+  for (const b of comCel.slice(Math.max(0, primeiro))) {
+    if (fimTabela(b)) break;
+    if (ehCab.has(b) || miuda(b) || b.pgnum) continue;
+    let algo = false;
+    for (const [x, s] of b.c) {
+      let j = -1, d = Infinity;
+      centros.forEach((c, k) => { const dd = Math.abs(c.x - x); if (dd < d) { d = dd; j = k; } });
+      if (j < 0 || d > tol) continue;
+      const n = nrm(s);
+      PH_RE.lastIndex = 0;
+      if (PH_RE.test(n)) { fis[j].ph++; algo = true; continue; }
+      if (CAB_RE.test(n.replace(/^[^a-z0-9]+/, ''))) continue;
+      fis[j].valores++; algo = true;
+      if (/\d/.test(n)) fis[j].nums++;
+    }
+    if (algo) linhas++;
+  }
+  // célula em branco: a coluna tem menos células (valor ou campo-modelo) que a coluna mais cheia do mesmo bloco,
+  // limitado ao número de linhas com dados. Contar por coluna, e não linha a linha, resiste aos rótulos que
+  // quebram em duas linhas; o limite pelas linhas evita cobrar de uma coluna as subcolunas extras de outra.
+  const maior = Math.min(linhas, Math.max(0, ...fis.map(f => f.valores + f.ph)));
+  const col = {};
+  centros.forEach((c, j) => {
+    const cc = col[c.k] = col[c.k] || { valores: 0, nums: 0, ph: 0, brancas: 0, colunas: 0 };
+    cc.colunas++; cc.valores += fis[j].valores; cc.nums += fis[j].nums; cc.ph += fis[j].ph;
+    cc.brancas += Math.max(0, maior - fis[j].valores - fis[j].ph);
+  });
+  return { col, centros };
+}
+// Nota de uma coluna: cheia (1), com lacunas (0,5) ou vazia (0).
+function notaColuna(c, rotulo, bloco) {
+  const onde = `coluna "${rotulo}"${bloco || ''}`;
+  if (!c || !c.valores) return [0, `${onde} vazia${c && c.ph ? ` (${c.ph} campo(s)-modelo)` : ''}`];
+  if (!c.ph && !c.brancas) return [1, `${onde}: ${c.valores} valor(es)`];
+  return [0.5, `${onde} incompleta (${c.valores} valor(es)${c.brancas ? `, ${c.brancas} célula(s) em branco` : ''}${c.ph ? `, ${c.ph} campo(s)-modelo` : ''})`];
+}
+
 /* ===================== critérios: regras ===================== */
 const ev = (b, n) => b ? { pg: b.pg, txt: corta(b.t, n || 230) } : null;
 const tier = (v, alto, medio) => v >= alto ? 1 : (v >= medio ? 0.5 : 0);
@@ -1616,6 +1707,19 @@ function indice(D, nome, sufixoNum) {
 function avaliarCriterios(D) {
   const r = {};
   const set = (c, v, b, info, extra) => (r[c] = Object.assign({ v, ev: b && b.pg ? (b.txt ? b : ev(b)) : null, info: info || '' }, extra || {}));
+  // Refaz, coluna a coluna, os critérios de dados de uma tabela (previsto x realizado). Sem posições, fica a nota da tabela inteira.
+  const porColuna = (c, specs, mapa, bs, centros, bloco) => {
+    if (!c) return null;
+    const res = colunasTabela(bs || [D.B[c.i]].concat(c.win.bs), specs, centros);
+    if (!res) return null;
+    for (const cod in mapa) {
+      const [k, rot] = mapa[cod];
+      if (!res.col[k]) continue;
+      const [v, info] = notaColuna(res.col[k], rot, bloco);
+      set(cod, v, c, info);
+    }
+    return res;
+  };
   const ano = D.ano;
 
   // A2 · relação dos dirigentes da unidade
@@ -1799,7 +1903,9 @@ function avaliarCriterios(D) {
       }
       return c;
     };
-    tabela('E1', 'E2', 'T_pes', 8, 'tabela de servidores previstos e em atividade');
+    const cPes = tabela('E1', 'E2', 'T_pes', 8, 'tabela de servidores previstos e em atividade');
+    // a previsão acumulada vem do Sinpeg; a unidade preenche só "Em atividade no ano-base"
+    porColuna(cPes, { prev: /^previsao/, real: /^em atividade/ }, { E2: ['real', 'Em atividade no ano-base'] });
     {
       const s = D.secao(['pes1']);
       const zona = s.head ? s : D.secao('pes');
@@ -1809,7 +1915,8 @@ function avaliarCriterios(D) {
       const v = (compara.length && reflexo.length) ? 1 : (pars.length && (compara.length || reflexo.length) ? 0.5 : 0);
       set('E3', v, compara[0] || reflexo[0] || zona.head, v === 1 ? 'confronta previsto e em atividade e aponta reflexos' : (v ? (compara.length ? 'compara previsto e em atividade, sem apontar reflexos' : 'aponta reflexos, sem confrontar previsto e em atividade') : 'sem análise da tabela de servidores previstos e em atividade'));
     }
-    tabela('E4', ['E5', 'E6'], 'T_qua', 10, 'tabela de escolaridade/titulação');
+    const cQua = tabela('E4', ['E5', 'E6'], 'T_qua', 10, 'tabela de escolaridade/titulação');
+    porColuna(cQua, { prev: /^informado/, real: /^em atividade/ }, { E5: ['prev', 'Informado no PDU'], E6: ['real', 'Em atividade no ano-base'] });
     {
       const a = indice(D, 'iqcd'), b = indice(D, 'iqcta');
       const vA = a.calc && b.calc ? 1 : ((a.calc || b.calc || a.cita || b.cita) ? 0.5 : 0);
@@ -1855,34 +1962,41 @@ function avaliarCriterios(D) {
       if (!pars.length && c && c.win.nums >= 2) { va = 0.5; ia = 'tabela preenchida, mas sem análise de benefícios e dificuldades'; }
       if (decl && va < 1) { va = 1; ia = 'declaração de que não houve previsão (nada a analisar)'; }
       set(cA, va, pars[0] || decl || s.head, ia);
+      return { c, decl };
     };
-    infra(['F1', 'F2', 'F3', 'F4'], 'T_ifi', 'ifi',
+    const fis = infra(['F1', 'F2', 'F3', 'F4'], 'T_ifi', 'ifi',
       /nao houve (previsao|ampliacao|expansao)[^.]{0,60}(espaco fisico|infraestrutura fisica|obras?|reformas?)|nao (houve|foi prevista) (previsao de )?(expansao|ampliacao) (do|de) espaco/,
       /obra|reforma|amplia|espaco fisico|infra-?estrutura fisica|construc|predio|sala|laboratorio/,
       /benefici|dificuldade|providenc|atraso|conclu|melhori|permit|possibilit|impact|nao houve previsao/, 'tabela de expansão do espaço físico');
-    // F9 · recursos de acessibilidade (bloco novo da tabela de espaço físico no Guia V2/2026)
+    // F9, F10 · recursos de acessibilidade (bloco da tabela de espaço físico): previsto e concluído, em separado
     {
-      const c = D.melhorCap('T_ifi');
-      const decl = D.achaBloco(/nao houve (previsao|ampliacao|expansao)[^.]{0,60}(espaco fisico|infraestrutura fisica|obras?|reformas?)|nao (houve|foi prevista) (previsao de )?(expansao|ampliacao) (do|de) espaco/, b => b.sec !== 'indice');
+      const c = fis.c;
       let v = 0, info = 'não localizei a tabela de expansão do espaço físico';
+      const ia = c ? c.win.bs.findIndex(b => /acessibilidade/.test(b.n)) : -1;
       if (c) {
-        const i = c.win.n.indexOf('acessibilidade');
-        if (i < 0) info = 'tabela de espaço físico sem o bloco de recursos de acessibilidade';
+        if (ia < 0) info = 'tabela de espaço físico sem o bloco de recursos de acessibilidade';
         else {
-          const resto = c.win.n.slice(i + 13).split(/(^|\s)fonte\s*:/)[0];
+          const resto = c.win.bs.slice(ia).map(b => b.n).join(' ').slice(13).split(/(^|\s)fonte\s*:/)[0];
           const nums = conta(resto, NUM_RE), ph = conta(resto, PH_RE);
           if (nums >= 1 && !ph) { v = 1; info = `recursos de acessibilidade com ${nums} quantidade(s)`; }
           else if (nums >= 1) { v = 0.5; info = `recursos de acessibilidade incompletos (${ph} campo(s)-modelo)`; }
           else info = 'bloco de recursos de acessibilidade sem quantidades';
         }
       }
-      if (decl && v < 1) { v = 1; info = 'declara que não houve previsão de ampliação do espaço físico'; }
-      set('F9', v, c || decl, info);
+      if (fis.decl && v < 1) { v = 1; info = 'declara que não houve previsão de ampliação do espaço físico'; }
+      set('F9', v, c || fis.decl, info);
+      set('F10', v, c || fis.decl, info);
+      if (c && !fis.decl) {
+        const specs = { prev: /^previsao/, real: /^(concluid|realizad)/ };
+        const area = porColuna(c, specs, { F2: ['prev', 'Previsão para vigência do Plano'], F3: ['real', 'Concluído até o ano-base'] }, [D.B[c.i]].concat(ia >= 0 ? c.win.bs.slice(0, ia) : c.win.bs));
+        if (area && ia >= 0) porColuna(c, specs, { F9: ['prev', 'Previsão para vigência do Plano'], F10: ['real', 'Concluído até o ano-base'] }, c.win.bs.slice(ia + 1), area.centros, ' do bloco de acessibilidade');
+      }
     }
-    infra(['F5', 'F6', 'F7', 'F8'], 'T_iti', 'iti',
+    const ti = infra(['F5', 'F6', 'F7', 'F8'], 'T_iti', 'iti',
       /nao houve (previsao|aquisicao)[^.]{0,60}(equipamentos|licencas|ti\b|tecnologia)/,
       /equipament|licenc|aquisic|infra-?estrutura de ti|tecnologia da informacao|computador|notebook|impressora|software/,
       /benefici|dificuldade|justific|melhori|permit|possibilit|impact|adquirid|atraso|nao houve previsao/, 'tabela de expansão da infraestrutura de TI');
+    if (ti.c && !ti.decl) porColuna(ti.c, { prev: /^previsao/, real: /^(adquirid|realizad)/ }, { F6: ['prev', 'Previsão de aquisição até o ano-base'], F7: ['real', 'Adquirido até o ano-base'] });
   }
   // G1–G5 · sustentabilidade e ODS
   {
@@ -2197,13 +2311,14 @@ const CAMPOS_X1 = { 'UFPA': 'o nome da UFPA', 'unidade': 'o nome da unidade', 't
 const MIN_DADOS = { E2: 8, E5: 10, E6: 10, E9: 6, E11: 4 };
 // Tabela a que cada critério de dados se refere, para a frase dizer qual está incompleta.
 // (pelo nome: o número da tabela muda conforme o template da unidade)
-const TABELA = { E2: 'tabela de servidores previstos e em atividade', E5: 'tabela de escolaridade/titulação', E6: 'tabela de escolaridade/titulação', E9: 'tabela de capacitação por modalidade', E11: 'tabela de capacitados e em atividade', F2: 'tabela de expansão do espaço físico', F3: 'tabela de expansão do espaço físico', F4: 'tabela de expansão do espaço físico', F6: 'tabela de expansão da infraestrutura de TI', F7: 'tabela de expansão da infraestrutura de TI', F8: 'tabela de expansão da infraestrutura de TI', H2: 'tabela de cursos' };
+const TABELA = { F9: 'tabela de expansão do espaço físico', F10: 'tabela de expansão do espaço físico', E2: 'tabela de servidores previstos e em atividade', E5: 'tabela de escolaridade/titulação', E6: 'tabela de escolaridade/titulação', E9: 'tabela de capacitação por modalidade', E11: 'tabela de capacitados e em atividade', F2: 'tabela de expansão do espaço físico', F3: 'tabela de expansão do espaço físico', F4: 'tabela de expansão do espaço físico', F6: 'tabela de expansão da infraestrutura de TI', F7: 'tabela de expansão da infraestrutura de TI', F8: 'tabela de expansão da infraestrutura de TI', H2: 'tabela de cursos' };
 const TITULO = { A3: 'Mensagem do Dirigente', H6: 'Considerações Finais' };
 // Critérios em que o Guia aceita uma declaração no lugar do conteúdo: quando a regra marca "não", ela também não achou a declaração.
 const DECLARA = {
   B3: 'não houve previsão de alteração da estrutura organizacional', C4: 'não houve ação relevante não prevista no PDU e no PGO',
-  F1: 'não houve previsão de obras ou reformas', F2: 'não houve previsão de obras ou reformas', F3: 'não houve previsão de obras ou reformas', F4: 'não houve previsão de obras ou reformas',
-  F5: 'não houve previsão de aquisições de TI', F6: 'não houve previsão de aquisições de TI', F7: 'não houve previsão de aquisições de TI', F8: 'não houve previsão de aquisições de TI',
+  F1: 'não houve previsão ou ampliação do espaço físico', F2: 'não houve previsão ou ampliação do espaço físico', F3: 'não houve previsão ou ampliação do espaço físico', F4: 'não houve previsão ou ampliação do espaço físico',
+  F9: 'não houve previsão ou ampliação do espaço físico', F10: 'não houve previsão ou ampliação do espaço físico',
+  F5: 'não houve previsão ou aquisição de equipamentos e licenças', F6: 'não houve previsão ou aquisição de equipamentos e licenças', F7: 'não houve previsão ou aquisição de equipamentos e licenças', F8: 'não houve previsão ou aquisição de equipamentos e licenças',
   H1: 'não houve previsão de cursos novos', H2: 'não houve previsão de cursos novos', H3: 'não houve previsão de cursos novos',
 };
 
@@ -2338,6 +2453,20 @@ function fraseRegra(cod, info) {
     const trata = +m[2] ? `tratam de ${m[2]} dos ${m[3]} elementos pedidos pelo Guia` : `não tratam de nenhum dos ${m[3]} elementos pedidos pelo Guia`;
     return `As considerações finais têm cerca de ${m[1]} caracteres e ${trata}; ${+m[2] ? 'não abordam' : 'faltam'} ${listaE(comArtigo(m[4]))}.`;
   }
+  // colunas de tabela (previsto x realizado), lidas em separado
+  if ((m = s.match(/^coluna "(.+?)"( do bloco de acessibilidade)? (vazia|incompleta)(?: \((.+)\))?$/))) {
+    const onde = m[2] ? `No bloco de recursos de acessibilidade da ${nomeTabela(cod).replace(/^a /, '')}` : `Na ${nomeTabela(cod).replace(/^a /, '')}`;
+    const partes = [];
+    let vals = null;
+    (m[4] || '').split(', ').forEach(p => {
+      let k;
+      if ((k = p.match(/^(\d+) valor\(es\)$/))) vals = +k[1];
+      else if ((k = p.match(/^(\d+) célula\(s\) em branco$/))) partes.push(`${qtd(+k[1], 'célula', 'células')} em branco`);
+      else if ((k = p.match(/^(\d+) campo\(s\)-modelo$/))) partes.push(`${qtd(+k[1], 'campo', 'campos')} ainda com o texto-modelo do template`);
+    });
+    if (m[3] === 'vazia') return `${onde}, a coluna "${m[1]}" está vazia${partes.length ? `: ${listaE(partes)}` : ''}.`;
+    return `${onde}, a coluna "${m[1]}" está incompleta: ${listaE((vals !== null ? [`${qtd(vals, 'valor preenchido', 'valores preenchidos')}`] : []).concat(partes))}.`;
+  }
   // F9 · acessibilidade
   if (s === 'tabela de espaço físico sem o bloco de recursos de acessibilidade') return 'A tabela de expansão do espaço físico está sem o bloco de recursos de acessibilidade.';
   if (s === 'bloco de recursos de acessibilidade sem quantidades') return 'O bloco de recursos de acessibilidade da tabela de espaço físico está sem as quantidades previstas e concluídas.';
@@ -2401,7 +2530,7 @@ root.RAA = {
   versao: '2.0', nrm, corta, fmtN, pgsTxt, UNIDADES, CRIT, CRIT_MAP, PESOS_PADRAO, DIMS, aplicavel,
   identificar, extrairBlocos, blocosDeTexto, analisar, avaliarDocumento,
   valorAuto, valorCriterio, infoCriterio, valorDimAuto, valorDim, notas, faixa, parecer, kappa, leituraKappa,
-  fraseRegra, explicarCriterio,
+  fraseRegra, explicarCriterio, colunasTabela,
 };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
