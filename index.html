@@ -654,12 +654,12 @@ td[data-l="Perfil"] .nome{white-space:nowrap}
         <div class="card-cab"><h2>Pesos dos critérios</h2><div class="row"><button id="cfg-link" type="button">Copiar link com estes pesos</button><button class="quiet" id="cfg-reset" type="button">Restaurar padrão</button></div></div>
         <p class="cap">O link leva estes pesos e o peso da conformidade na nota final. Quem abrir vê o que muda e escolhe se aplica no próprio navegador.</p>
         <div id="cfg-link-box"></div>
-        <p class="cap">Padrão: 3 para os itens centrais (Tabela 1 e sua análise, orçamento, PLS, ODS, mensagem e considerações finais), 2 para tabelas e dados, 1 para elementos formais. Peso 0 tira o critério da conta. Os critérios registrados no Sinpeg (prazo, Gestão do PDU, Anexos e Formulários Específicos) não fazem parte desta avaliação.</p>
+        <p class="cap">Padrão: 3 para os itens centrais (Tabela 2 dos indicadores e sua análise, orçamento, PLS, ODS, mensagem e considerações finais), 2 para tabelas e dados, 1 para elementos formais. Peso 0 tira o critério da conta. Os critérios registrados no Sinpeg (prazo, Gestão do PDU, Anexos e Formulários Específicos) não fazem parte desta avaliação.</p>
         <div class="scroll pesos"><table class="stack" id="cfg-pesos"></table></div>
       </section>
     </section>
 
-    <footer class="rodape noprint">Avaliador de RAA, ferramenta de apoio à avaliação dos Relatos Anuais dos Resultados das Unidades da Diretoria de Informações Institucionais (Dinfi/Proplan/UFPA). Critérios conforme o Guia de elaboração do Relato Anual e a lista oficial de critérios de avaliação. A leitura de PDF e a geração de arquivos funcionam sem internet; só a sugestão de notas por IA precisa de conexão.</footer>
+    <footer class="rodape noprint">Avaliador de RAA, ferramenta de apoio à avaliação dos Relatos Anuais dos Resultados das Unidades da Diretoria de Informações Institucionais (Dinfi/Proplan/UFPA). Critérios conforme o Guia para elaboração do Relato V2/2026 e os templates de 2026 (acadêmico e administrativo, com e sem indicador). A leitura de PDF e a geração de arquivos funcionam sem internet; só a sugestão de notas por IA precisa de conexão.</footer>
   </main>
 </div>
 <div id="aviso" class="noprint" aria-live="polite"></div>
@@ -1204,103 +1204,103 @@ const pub = u => ({ sigla: u.sigla, nome: u.nome, tipo: u.tipo, perfil: u.perfil
 // Lista oficial (47 critérios verificáveis no PDF) + 2 complementares (X).
 // p = peso padrão (1 formal · 2 tabelas e dados · 3 itens centrais)
 const CRIT = [
-  ['A2', 'Elementos pré-textuais', 'Relação dos Dirigentes da Unidade', 'Consta a lista com os dirigentes da unidade?', 'Relação dos Dirigentes da Unidade (p. 9)', 1,
+  // Guia para elaboração do Relato V2/2026. As tabelas são citadas pelo nome: o número muda conforme o template
+  // (com indicador, a Tabela 2 é a dos indicadores; sem indicador, as seguintes sobem um número).
+  ['A2', 'Elementos pré-textuais', 'Relação dos Dirigentes da Unidade', 'Consta a lista com a função e o nome dos dirigentes da unidade?', 'Relação dos Dirigentes da Unidade (p. 9)', 1,
     'inserir a relação com a função e o nome dos dirigentes da Unidade'],
-  ['A3', 'Elementos pré-textuais', 'Mensagem do Dirigente', 'Foi inserida a mensagem do dirigente conforme as orientações?', 'Mensagem do Dirigente (p. 9)', 3,
+  ['A3', 'Elementos pré-textuais', 'Mensagem do Dirigente', 'Foi inserida a mensagem do dirigente conforme as orientações?', 'Mensagem do Dirigente da Unidade (p. 9)', 3,
     'redigir a mensagem do dirigente cobrindo prioridades, ações executadas, avanços, riscos e desafios futuros'],
-  ['A4', 'Elementos pré-textuais', 'Listas', 'Consta informação nas listas (siglas, tabelas, quadros e figuras)?', 'Listas (p. 10)', 1,
+  ['A4', 'Elementos pré-textuais', 'Listas', 'Consta informação nas listas (siglas, tabelas, quadros e figuras)?', 'Listas (p. 9)', 1,
     'atualizar as listas de siglas, tabelas, quadros e figuras'],
-  ['A5', '1 Visão Geral', 'Visão Geral da Unidade', 'A unidade apresentou informações que a identifiquem (criação, normativa, missão e visão)?', '1 Visão Geral da Unidade (p. 10)', 2,
+  ['A5', '1 Visão Geral', 'Visão Geral da Unidade', 'A unidade apresentou informações que a identifiquem (data e normativa de criação, missão e visão)?', '1 Visão Geral da Unidade (p. 10)', 2,
     'completar a Visão Geral com data e normativa de criação, missão e visão'],
-  ['B1', '2 Estrutura organizacional', 'Organograma', 'Houve a inserção do organograma conforme as orientações?', '2.1 Organograma (p. 10)', 2,
-    'inserir o organograma aprovado pelo Consun, identificado como figura'],
-  ['B2', '2 Estrutura organizacional', 'Organograma', 'Foi inserida a fonte da figura do organograma, com a resolução de aprovação?', 'fonte da figura do organograma (p. 10)', 1,
+  ['B1', '2 Organização administrativa', 'Organograma', 'Houve a inserção do organograma conforme as orientações?', '2.1 Organograma (p. 10)', 2,
+    'inserir o organograma presente no regimento aprovado pelo Consun, identificado como figura'],
+  ['B2', '2 Organização administrativa', 'Organograma', 'Foi inserida a fonte da figura do organograma, com a resolução de aprovação?', '2.1 Fonte da figura do organograma (p. 10)', 1,
     'registrar na fonte da figura do organograma a resolução que aprovou a estrutura organizacional'],
-  ['B3', '2 Estrutura organizacional', 'Organograma — subunidades criadas', 'A unidade destacou as subunidades/setores criados conforme a proposta do PDU, ou declarou que não houve criação?', '2.1 Organograma e tópico 9 do Guia (p. 10 e 27)', 1,
-    'informar as subunidades e setores criados conforme previsto no PDU, com data e ato de criação, ou declarar que não houve alteração da estrutura'],
-  ['B4', '2 Estrutura organizacional', 'Competências das subunidades', 'A unidade relatou as principais atribuições das subunidades ou inseriu o link da normativa?', '2.2 Competências (p. 11)', 1,
-    'resumir as atribuições das subunidades ou incluir o link da normativa'],
-  ['B5', '2 Estrutura organizacional', 'Dirigentes da Unidade', 'Houve a inserção do Quadro 1 (informações dos dirigentes por subunidade)?', 'Quadro 1 (p. 11)', 2,
+  ['B3', '2 Organização administrativa', 'Criação de Subunidades', 'A unidade preencheu a Tabela 1 (Alteração na Estrutura Organizacional), com dificuldades e justificativas, ou declarou que não houve previsão de alteração?', '2.2 Criação de Subunidades previstas e não previstas no PDU (p. 10 e 11)', 2,
+    'preencher a Tabela 1 com as subunidades criadas (previstas ou não no PDU), relatar as dificuldades e justificar as não previstas, ou declarar que não houve previsão de alteração da estrutura'],
+  ['B4', '2 Organização administrativa', 'Competências da Unidade e Subunidades', 'A unidade apresentou sua finalidade e composição ou inseriu o link da normativa com as atribuições?', '2.3 Competências da Unidade e Subunidades (p. 11)', 1,
+    'resumir a finalidade e a composição da unidade ou incluir o link da normativa com as atribuições'],
+  ['B5', '2 Organização administrativa', 'Dirigentes da Unidade', 'Houve a inserção do Quadro 1 (informações dos dirigentes por subunidade)?', '2.4 Dirigentes da Unidade, Quadro 1 (p. 11)', 2,
     'inserir o Quadro 1 com as informações dos dirigentes por subunidade'],
-  ['B6', '2 Estrutura organizacional', 'Dirigentes da Unidade', 'O Quadro 1 foi preenchido com todas as informações (função, portaria, nome, cargo, e-mail e período)?', 'Quadro 1 (p. 11)', 2,
-    'completar o Quadro 1 com função, portaria, nome, cargo, e-mail institucional e período'],
+  ['B6', '2 Organização administrativa', 'Dirigentes da Unidade', 'O Quadro 1 foi preenchido com todas as informações (subunidade, função, portaria, nome, cargo, e-mail e período)?', '2.4 Dirigentes da Unidade, Quadro 1 (p. 11)', 2,
+    'completar o Quadro 1 com subunidade, função, portaria de designação, nome, cargo, e-mail institucional e período na função'],
   ['C1', '3 Planejamento', 'Análise dos Resultados a partir do PDU', 'Houve a inserção de todos os resultados dos indicadores do PDU lançados no Sinpeg?', '3.1 Indicadores do PDU no Sinpeg (p. 12)', 2,
     'lançar no Sinpeg e trazer para o relatório o resultado de todos os indicadores do PDU'],
-  ['C2', '3 Planejamento', 'Análise dos Resultados a partir do PDU', 'Foi seguida a estrutura da Tabela 1, com seus dados e a fonte, conforme o Guia?', 'Tabela 1 (p. 12)', 3,
-    'copiar a Tabela 1 do card Indicadores do PDU sem alterar sua estrutura, com a fonte'],
-  ['C3', '3 Planejamento', 'Análise dos Resultados a partir do PDU', 'Foi feita a análise dos resultados conforme as orientações (alcance, avanços, dificuldades, impactos, causas e encaminhamentos)?', '3.1 Análise dos resultados (p. 12)', 3,
+  ['C2', '3 Planejamento', 'Análise dos Resultados a partir do PDU', 'Foi seguida a estrutura da Tabela 2 (desempenho dos indicadores do PDU), com seus dados e a fonte?', '3.1 Tabela 2 (p. 12)', 3,
+    'copiar a Tabela 2 do card Indicadores do PDU sem alterar sua estrutura, com a fonte'],
+  ['C3', '3 Planejamento', 'Análise dos Resultados a partir do PDU', 'Foi feita a análise dos resultados conforme as orientações (alcance, avanços, dificuldades, impactos, causas e encaminhamentos)?', '3.1 Análise dos resultados (p. 12 e 13)', 3,
     'analisar criticamente cada indicador, com avanços, dificuldades, impactos e encaminhamentos'],
-  ['C4', '3 Planejamento', 'Ações não previstas no PDU e PGO', 'A unidade descreveu as ações relevantes não previstas no PDU e PGO, ou declarou que não houve?', '3.2 Ações não previstas no PDU e PGO (p. 13)', 2,
-    'descrever as ações relevantes não previstas no PDU e PGO, ou declarar que não houve'],
-  ['D1', '4 Orçamento', 'Gestão Orçamentária e Financeira', 'A unidade inseriu o Quadro 2 (desempenho do orçamento de custeio e capital por plano interno) e a fonte?', 'Quadro 2 (p. 14)', 3,
-    'inserir o Quadro 2 exportado do Sinpeg, identificado e com a fonte'],
-  ['D2', '4 Orçamento', 'Gestão Orçamentária e Financeira', 'Foi feita a análise orçamentária conforme as orientações (os cinco recortes do Guia)?', '4 Gestão Orçamentária, análises exigidas (p. 15-17)', 3,
+  ['C4', '3 Planejamento', 'Ações não previstas no PDU e PGO', 'A unidade descreveu as ações relevantes não previstas no PDU e PGO (ou as ações do exercício, se não tem PDU), ou declarou que não houve?', 'Ações relevantes não previstas no PDU e PGO (p. 13)', 2,
+    'descrever as ações relevantes não previstas no PDU e PGO, ou declarar que "não houve ação relevante não prevista no PDU e PGO neste exercício"'],
+  ['D1', '4 Orçamento', 'Gestão Orçamentária e Financeira', 'A unidade inseriu o Quadro 2 (desempenho do orçamento por plano interno, copiado do Sinpeg) e a fonte?', '4 Gestão Orçamentária, Quadro 2 (p. 14)', 3,
+    'inserir o Quadro 2 copiado do card Dados Orçamentários do Sinpeg, identificado e com a fonte "BI PGO ano-base"'],
+  ['D2', '4 Orçamento', 'Gestão Orçamentária e Financeira', 'Foi feita a análise orçamentária conforme as orientações (os cinco recortes do Guia)?', '4 Gestão Orçamentária, análises exigidas (p. 15 a 17)', 3,
     'produzir as cinco análises orçamentárias exigidas pelo Guia, com justificativas por plano interno'],
-  ['E1', '5 Pessoal', 'Expansão da Estrutura de Pessoal', 'Foi inserida a tabela de servidores previstos no PDU e em atividade (Tabela 2) conforme as orientações?', 'Tabela 2 (p. 18)', 2,
-    'inserir a Tabela 2 conforme o template, com a fonte'],
-  ['E2', '5 Pessoal', 'Expansão da Estrutura de Pessoal', 'Foi inserido o quantitativo de servidores previstos no PDU e em atividade (Tabela 2)?', 'Tabela 2 (p. 18)', 2,
-    'preencher a Tabela 2 com o previsto e o em atividade no ano-base'],
-  ['E3', '5 Pessoal', 'Expansão da Estrutura de Pessoal', 'Foi feita a análise da Tabela 2, confrontando previsto e em atividade e seus reflexos?', '5.1 Análise da estrutura de pessoal (p. 18)', 2,
+  ['E1', '5 Pessoal', 'Expansão da Estrutura de Pessoal', 'Foi inserida a tabela de servidores previstos no PDU e em atividade no ano-base, com a fonte?', '5.1 Expansão da Estrutura de Pessoal (p. 18)', 2,
+    'inserir a tabela de servidores previstos no PDU e em atividade conforme o template, com a fonte'],
+  ['E2', '5 Pessoal', 'Expansão da Estrutura de Pessoal', 'Foi preenchida a coluna "Em atividade no ano-base" da tabela de servidores previstos e em atividade?', '5.1 Expansão da Estrutura de Pessoal (p. 18)', 2,
+    'preencher a coluna "Em atividade no ano-base" (a previsão acumulada vem do Sinpeg)'],
+  ['E3', '5 Pessoal', 'Expansão da Estrutura de Pessoal', 'Foi feita a análise confrontando servidores previstos e em atividade e seus reflexos nas ações da unidade?', '5.1 Expansão da Estrutura de Pessoal (p. 18)', 2,
     'confrontar servidores previstos no PDU e em atividade, apontando os reflexos nas ações da unidade'],
-  ['E4', '5 Pessoal', 'Qualificação da Força de Trabalho', 'Foi inserida a tabela de servidores por escolaridade/titulação (Tabela 3) conforme as orientações?', 'Tabela 3 (p. 19)', 2,
-    'inserir a Tabela 3 conforme o template, com a fonte'],
-  ['E5', '5 Pessoal', 'Qualificação da Força de Trabalho', 'Foi inserido o quantitativo por escolaridade/titulação informado no PDU (Tabela 3)?', 'Tabela 3 (p. 19)', 2,
-    'preencher a coluna "Informado no PDU" da Tabela 3'],
-  ['E6', '5 Pessoal', 'Qualificação da Força de Trabalho', 'Foi inserido o quantitativo por escolaridade/titulação em atividade no ano-base (Tabela 3)?', 'Tabela 3 (p. 19)', 2,
-    'preencher a coluna "Em atividade no ano-base" da Tabela 3'],
-  ['E7', '5 Pessoal', 'Qualificação da Força de Trabalho', 'Foi feita a comparação da titulação utilizando o IQCD e o IQCTA?', 'IQCD e IQCTA (p. 19)', 2,
+  ['E4', '5 Pessoal', 'Qualificação da Força de Trabalho', 'Foi inserida a tabela de servidores por escolaridade/titulação, com a fonte?', '5.2 Qualificação da Força de Trabalho (p. 19)', 2,
+    'inserir a tabela de distribuição dos servidores por escolaridade/titulação, com a fonte'],
+  ['E5', '5 Pessoal', 'Qualificação da Força de Trabalho', 'Foi preenchida a coluna "Informado no PDU" da tabela de escolaridade/titulação?', '5.2 Qualificação da Força de Trabalho (p. 19)', 2,
+    'preencher a coluna "Informado no PDU" da tabela de escolaridade/titulação'],
+  ['E6', '5 Pessoal', 'Qualificação da Força de Trabalho', 'Foi preenchida a coluna "Em atividade no ano-base" da tabela de escolaridade/titulação?', '5.2 Qualificação da Força de Trabalho (p. 19)', 2,
+    'preencher a coluna "Em atividade no ano-base" da tabela de escolaridade/titulação'],
+  ['E7', '5 Pessoal', 'Qualificação da Força de Trabalho', 'Foi feita a comparação da titulação utilizando o IQCD e o IQCTA (só o IQCTA nas unidades administrativas)?', '5.2 IQCD e IQCTA (p. 19)', 2,
     'calcular e comentar o IQCD e o IQCTA comparando PDU e ano-base'],
-  ['E8', '5 Pessoal', 'Capacitação da Força de Trabalho', 'Foi inserida a tabela de capacitação por modalidade (Tabela 4) conforme as orientações?', 'Tabela 4 (p. 20)', 2,
-    'inserir a Tabela 4 de capacitação por modalidade'],
-  ['E9', '5 Pessoal', 'Capacitação da Força de Trabalho', 'Foram inseridos na Tabela 4 todos os dados solicitados?', 'Tabela 4 (p. 20)', 2,
-    'preencher todos os dados da Tabela 4 (inserir 0 quando não houver capacitação)'],
-  ['E10', '5 Pessoal', 'Capacitação da Força de Trabalho', 'Foi inserida a tabela de servidores capacitados e em atividade (Tabela 5) conforme as orientações?', 'Tabela 5 (p. 20)', 2,
-    'inserir a Tabela 5 de capacitados e em atividade'],
-  ['E11', '5 Pessoal', 'Capacitação da Força de Trabalho', 'Foram inseridos na Tabela 5 todos os dados solicitados?', 'Tabela 5 (p. 20)', 2,
-    'preencher todos os dados da Tabela 5'],
-  ['E12', '5 Pessoal', 'Capacitação da Força de Trabalho', 'Foi feita a comparação de capacitados e em atividade utilizando o ICCD e o ICCTA?', 'ICCD e ICCTA (p. 20)', 2,
+  ['E8', '5 Pessoal', 'Capacitação da Força de Trabalho', 'Foi inserida a tabela de capacitação dos servidores por modalidade, com a fonte?', '5.3 Capacitação da Força de Trabalho (p. 20)', 2,
+    'inserir a tabela de capacitação por modalidade, com a fonte'],
+  ['E9', '5 Pessoal', 'Capacitação da Força de Trabalho', 'Foram inseridos na tabela de capacitação por modalidade todos os dados (0 quando não houve)?', '5.3 Capacitação da Força de Trabalho (p. 20)', 2,
+    'preencher todos os dados da tabela de capacitação por modalidade (inserir 0 quando não houver capacitação)'],
+  ['E10', '5 Pessoal', 'Capacitação da Força de Trabalho', 'Foi inserida a tabela de servidores capacitados e em atividade no ano-base, com a fonte?', '5.3 Capacitação da Força de Trabalho (p. 20)', 2,
+    'inserir a tabela de servidores capacitados e em atividade, com a fonte'],
+  ['E11', '5 Pessoal', 'Capacitação da Força de Trabalho', 'Foram inseridos na tabela de capacitados e em atividade todos os dados?', '5.3 Capacitação da Força de Trabalho (p. 20)', 2,
+    'preencher todos os dados da tabela de servidores capacitados e em atividade'],
+  ['E12', '5 Pessoal', 'Capacitação da Força de Trabalho', 'Foi feita a comparação de capacitados e em atividade utilizando o ICCD e o ICCTA (só o ICCTA nas unidades administrativas)?', '5.3 ICCD e ICCTA (p. 20 e 21)', 2,
     'calcular e comentar o ICCD e o ICCTA, avaliando a aderência à política de capacitação'],
-  ['F1', '6 Infraestrutura', 'Infraestrutura Física', 'Foi inserida a tabela de expansão do espaço físico (Tabela 6) e a fonte conforme as orientações?', 'Tabela 6 (p. 21)', 2,
-    'inserir a Tabela 6 com a fonte, ou declarar que não houve previsão de expansão'],
-  ['F2', '6 Infraestrutura', 'Infraestrutura Física', 'Foi inserida a quantidade/área prevista para a vigência do plano (Tabela 6)?', 'Tabela 6 (p. 21)', 2,
+  ['F1', '6 Infraestrutura', 'Infraestrutura Física', 'Foi inserida a tabela de expansão do espaço físico, com a fonte, ou declarado que não houve previsão?', '6.1 Infraestrutura Física (p. 21)', 2,
+    'inserir a tabela de expansão do espaço físico com a fonte, ou declarar que não houve previsão ou ampliação do espaço físico'],
+  ['F2', '6 Infraestrutura', 'Infraestrutura Física', 'Foi inserida a área/quantidade prevista para a vigência do plano?', '6.1 Infraestrutura Física (p. 21)', 2,
     'informar a previsão de expansão do espaço físico ou declarar que não houve'],
-  ['F3', '6 Infraestrutura', 'Infraestrutura Física', 'Foi inserida a área/quantidade concluída até o exercício (Tabela 6)?', 'Tabela 6 (p. 21)', 2,
-    'informar o concluído até o exercício'],
+  ['F3', '6 Infraestrutura', 'Infraestrutura Física', 'Foi inserida a área/quantidade concluída até o ano-base?', '6.1 Infraestrutura Física (p. 21)', 2,
+    'informar o concluído até o ano-base'],
+  ['F9', '6 Infraestrutura', 'Infraestrutura Física', 'Foram informados os recursos de acessibilidade previstos e concluídos na tabela de espaço físico?', '6.1 Infraestrutura Física, recursos de acessibilidade (p. 21)', 1,
+    'informar na tabela de espaço físico a quantidade de recursos de acessibilidade previstos e concluídos'],
   ['F4', '6 Infraestrutura', 'Infraestrutura Física', 'Foram identificados os benefícios das obras/reformas e relatadas as dificuldades e providências?', '6.1 Análise da infraestrutura física (p. 21)', 2,
-    'relatar os benefícios das obras concluídas, as dificuldades e as providências adotadas'],
-  ['F5', '6 Infraestrutura', 'Infraestrutura de TI', 'Foi inserida a tabela de expansão da infraestrutura de TI (Tabela 7) e a fonte conforme as orientações?', 'Tabela 7 (p. 22)', 2,
-    'inserir a Tabela 7 com a fonte, ou declarar que não houve previsão de aquisição'],
-  ['F6', '6 Infraestrutura', 'Infraestrutura de TI', 'Foi inserida a quantidade prevista para aquisição até o exercício (Tabela 7)?', 'Tabela 7 (p. 22)', 2,
+    'relatar os benefícios das obras concluídas, as dificuldades e as providências adotadas, e justificar ampliações fora do PDU'],
+  ['F5', '6 Infraestrutura', 'Infraestrutura de TI', 'Foi inserida a tabela de expansão da infraestrutura de TI, com a fonte, ou declarado que não houve previsão?', '6.2 Infraestrutura de Tecnologia da Informação (p. 22)', 2,
+    'inserir a tabela de expansão da infraestrutura de TI com a fonte, ou declarar que não houve previsão ou aquisição'],
+  ['F6', '6 Infraestrutura', 'Infraestrutura de TI', 'Foi inserida a quantidade prevista para aquisição até o ano-base?', '6.2 Infraestrutura de Tecnologia da Informação (p. 22)', 2,
     'informar a previsão de aquisição de equipamentos e licenças'],
-  ['F7', '6 Infraestrutura', 'Infraestrutura de TI', 'Foi inserida a quantidade adquirida até o exercício (Tabela 7)?', 'Tabela 7 (p. 22)', 2,
-    'informar o adquirido até o exercício'],
+  ['F7', '6 Infraestrutura', 'Infraestrutura de TI', 'Foi inserida a quantidade adquirida até o ano-base?', '6.2 Infraestrutura de Tecnologia da Informação (p. 22)', 2,
+    'informar o adquirido até o ano-base'],
   ['F8', '6 Infraestrutura', 'Infraestrutura de TI', 'Foram identificados os benefícios das aquisições de TI e relatadas as dificuldades?', '6.2 Análise da infraestrutura de TI (p. 22)', 2,
-    'relatar os benefícios das aquisições de TI e as dificuldades enfrentadas'],
-  ['G1', '7 Sustentabilidade', 'Plano de Logística Sustentável', 'Foi inserido o Quadro 3 (PLS) e a fonte conforme as orientações?', 'Quadro 3, PLS (p. 23)', 3,
+    'relatar os benefícios das aquisições de TI e as dificuldades, e justificar aquisições fora do PDU'],
+  ['G1', '7 Gestão ambiental e sustentabilidade', 'Plano de Logística Sustentável', 'Foi inserido o Quadro 3 (ações relacionadas à gestão ambiental e sustentável) e a fonte?', '7.1 Plano de Logística Sustentável, Quadro 3 (p. 22 e 23)', 3,
     'inserir o Quadro 3 do PLS com a fonte'],
-  ['G2', '7 Sustentabilidade', 'Plano de Logística Sustentável', 'Foram inseridas no Quadro 3 as ações implementadas em cada eixo?', 'Quadro 3, PLS (p. 23)', 2,
+  ['G2', '7 Gestão ambiental e sustentabilidade', 'Plano de Logística Sustentável', 'Foram inseridas no Quadro 3 as ações implementadas em cada eixo?', '7.1 Plano de Logística Sustentável, Quadro 3 (p. 23 e 24)', 2,
     'descrever no Quadro 3 as ações implementadas em cada eixo, sem campos-modelo, traços ou cópia das definições'],
-  ['G3', '7 Sustentabilidade', 'Plano de Logística Sustentável', 'Foram informadas as dificuldades e/ou os avanços na gestão ambiental e sustentável?', '7.1 Análise do PLS (p. 22)', 2,
+  ['G3', '7 Gestão ambiental e sustentabilidade', 'Plano de Logística Sustentável', 'Foram informadas as dificuldades e/ou os avanços na gestão ambiental e sustentável?', '7.1 Plano de Logística Sustentável (p. 22)', 2,
     'informar as dificuldades e os avanços da gestão ambiental e sustentável'],
-  ['G4', '7 Sustentabilidade', 'Objetivos de Desenvolvimento Sustentável', 'Foi inserido o Quadro 4 (ODS) e a fonte conforme as orientações?', 'Quadro 4, ODS (p. 25)', 3,
+  ['G4', '7 Gestão ambiental e sustentabilidade', 'Objetivos de Desenvolvimento Sustentável', 'Foi inserido o Quadro 4 (ODS) e a fonte conforme as orientações?', '7.2 Objetivos de Desenvolvimento Sustentável, Quadro 4 (p. 25)', 3,
     'inserir o Quadro 4 dos ODS com a fonte'],
-  ['G5', '7 Sustentabilidade', 'Objetivos de Desenvolvimento Sustentável', 'Foram inseridos no Quadro 4 os programas/projetos vinculados, com os links de consulta?', 'Quadro 4, ODS, com link (p. 25)', 2,
+  ['G5', '7 Gestão ambiental e sustentabilidade', 'Objetivos de Desenvolvimento Sustentável', 'Foram inseridos no Quadro 4 os programas/projetos vinculados, com os links de consulta?', '7.2 Objetivos de Desenvolvimento Sustentável, Quadro 4 (p. 25)', 2,
     'informar, para cada ODS, o programa ou projeto e o link de consulta'],
-  ['H1', 'Cursos novos e Empresas Juniores', 'Oferta de Cursos Novos', 'Foi inserida a tabela de cursos previstos ou não no PDU (Tabela 8) e a fonte, ou declarado que não houve previsão?', 'Tabela 8 (p. 27)', 2,
-    'inserir a Tabela 8 de cursos novos com a fonte, ou declarar que não houve previsão'],
-  ['H2', 'Cursos novos e Empresas Juniores', 'Oferta de Cursos Novos', 'Foram inseridos os dados da Tabela 8 conforme as orientações?', 'Tabela 8 (p. 27)', 2,
-    'preencher os dados da Tabela 8 ou declarar que não houve oferta'],
-  ['H3', 'Cursos novos e Empresas Juniores', 'Oferta de Cursos Novos', 'Foram informadas as dificuldades que impediram a meta ou os benefícios da abertura dos cursos?', '8 Oferta de cursos novos (p. 27)', 2,
-    'informar as dificuldades que impediram a abertura dos cursos ou justificar os não previstos'],
-  ['H4', 'Cursos novos e Empresas Juniores', 'Empresas Juniores', 'Foi inserida a tabela de Empresas Juniores da unidade (Tabela 9 do template) e a fonte conforme as orientações?', 'Empresas Juniores (Guia, p. 28)', 2,
-    'inserir a tabela de Empresas Juniores com a fonte'],
-  ['H5', 'Cursos novos e Empresas Juniores', 'Empresas Juniores', 'Foram inseridos os dados da tabela de Empresas Juniores conforme as orientações?', 'Empresas Juniores (Guia, p. 28)', 2,
-    'preencher os dados da tabela de Empresas Juniores'],
-  ['H6', 'Considerações finais', 'Considerações Finais', 'Foram inseridas as considerações finais conforme as orientações?', '11 Considerações Finais (p. 28)', 3,
-    'redigir as considerações finais com assertivas da gestão, dificuldades, perspectivas e desafios futuros'],
-  ['X1', 'Complementares', 'Capa', 'A capa traz o nome da UFPA, o nome da Unidade e o título "Relatório Anual de Atividades – Exercício" com o ano-base?', 'Capa (p. 9)', 1,
-    'ajustar a capa: UFPA, nome completo da Unidade e "Relatório Anual de Atividades – Exercício" com o ano-base'],
-  ['X2', 'Complementares', 'Referências', 'Foram inseridas as referências bibliográficas?', 'Referências bibliográficas (p. 28)', 1,
+  ['H1', '8 Cursos novos', 'Oferta de Cursos Novos', 'Foi inserida a tabela de cursos previstos ou não no PDU, com a fonte, ou declarado que não houve previsão de abertura?', '8 Oferta de cursos novos de graduação e pós-graduação (p. 27)', 2,
+    'inserir a tabela de cursos previstos ou não no PDU com a fonte, ou declarar que não houve previsão de abertura de novos cursos'],
+  ['H2', '8 Cursos novos', 'Oferta de Cursos Novos', 'Foram preenchidos os dados da tabela de cursos (modalidade, previsto no PDU, data de criação e resolução ou convênio)?', '8 Oferta de cursos novos de graduação e pós-graduação (p. 27)', 2,
+    'preencher todas as colunas da tabela de cursos; para curso não ofertado, escrever "não houve abertura do curso"'],
+  ['H3', '8 Cursos novos', 'Oferta de Cursos Novos', 'Foram relatadas as dificuldades que impediram a abertura dos cursos previstos e justificada a abertura dos não previstos?', '8 Oferta de cursos novos de graduação e pós-graduação (p. 27)', 2,
+    'relatar as dificuldades que impediram a abertura dos cursos previstos e justificar os não previstos'],
+  ['H6', 'Considerações finais', 'Considerações Finais', 'Foram inseridas as considerações finais conforme as orientações (assertivas, dificuldades, perspectivas, desafios futuros e remanescentes)?', 'Considerações Finais (p. 27)', 3,
+    'redigir as considerações finais com assertivas da gestão, dificuldades, perspectivas, desafios futuros e os desafios remanescentes, justificando sua permanência'],
+  ['X1', 'Complementares', 'Capa', 'A capa traz o logotipo e o nome da UFPA, o nome completo da Unidade e o título "Relatório Anual de Atividades" com o exercício (ano-base)?', 'Capa (p. 9)', 1,
+    'ajustar a capa: logotipo e nome da UFPA, nome completo da Unidade e "Relatório Anual de Atividades – Exercício" com o ano-base'],
+  ['X2', 'Complementares', 'Referências', 'Foram inseridas as referências bibliográficas?', 'Referências bibliográficas (p. 27)', 1,
     'inserir as referências utilizadas na elaboração do documento'],
 ].map(([cod, bloco, topico, texto, guia, peso, rec]) => ({ cod, bloco, topico, texto, guia, peso, rec, extra: cod[0] === 'X' }));
 const CRIT_MAP = Object.fromEntries(CRIT.map(c => [c.cod, c]));
@@ -1308,18 +1308,18 @@ const PESOS_PADRAO = Object.fromEntries(CRIT.map(c => [c.cod, c.peso]));
 
 function aplicavel(cod, perfil, ind) {
   if (/^C[123]$/.test(cod) && ind === 'Sem indicador') return false;
-  if (/^H[1-5]$/.test(cod) && perfil === 'Administrativo') return false;
+  if (/^H[1-3]$/.test(cod) && perfil === 'Administrativo') return false;
   return true;
 }
 
 const DIMS = [
   ['Q1', 'Mensagem do dirigente', 'Prioridades, ações executadas, avanços, riscos e desafios futuros (Guia, p. 9).'],
   ['Q2', 'Análise crítica dos indicadores do PDU', 'Alcance das metas, avanços, dificuldades, impactos e encaminhamentos (p. 12).'],
-  ['Q3', 'Análise orçamentária', 'Os cinco recortes exigidos no tópico de orçamento (p. 15-17).'],
-  ['Q4', 'Análise da gestão de pessoal', 'Previsto x em atividade, IQCD/IQCTA e ICCD/ICCTA (p. 18-20).'],
+  ['Q3', 'Análise orçamentária', 'Os cinco recortes exigidos no tópico de orçamento (p. 15 a 17).'],
+  ['Q4', 'Análise da gestão de pessoal', 'Previsto x em atividade, IQCD/IQCTA e ICCD/ICCTA (p. 18 a 21).'],
   ['Q5', 'Análise de infraestrutura', 'Benefícios, dificuldades e providências, física e de TI (p. 21-22).'],
-  ['Q6', 'Sustentabilidade e ODS', 'Ações do PLS por eixo e projetos vinculados aos ODS com link (p. 22-26).'],
-  ['Q7', 'Considerações finais', 'Assertivas da gestão, dificuldades, perspectivas e desafios (p. 28).'],
+  ['Q6', 'Sustentabilidade e ODS', 'Ações do PLS por eixo e projetos vinculados aos ODS com link (p. 22 a 27).'],
+  ['Q7', 'Considerações finais', 'Assertivas da gestão, dificuldades, perspectivas, desafios futuros e remanescentes (p. 27).'],
   ['Q8', 'Integridade formal e dos dados', 'Ano-base correto, sem campos-modelo nem erros de referência, listas presentes.'],
 ].map(([cod, nome, desc]) => ({ cod, nome, desc }));
 const FORTE = {
@@ -1420,7 +1420,7 @@ const HEADS = [
   ['ref', /^referencias\b/],
   ['anexo', /^anexos?\b/],
 ];
-const FILHOS = { estrut: ['org', 'comp', 'dirig'], plan: ['pdu', 'nprev'], pes: ['pes1', 'pes2', 'pes3'], infra: ['ifi', 'iti'], sust: ['pls', 'ods'] };
+const FILHOS = { estrut: ['org', 'subun', 'comp', 'dirig'], plan: ['pdu', 'nprev'], pes: ['pes1', 'pes2', 'pes3'], infra: ['ifi', 'iti'], sust: ['pls', 'ods'] };
 const LEADER = /(\.\s?){5,}|…{2,}|_{5,}/;
 const CAP_PRE = /^(tabela|quadro|figura|grafico|ilustracao)\b/;
 const NUM_PREFIXO = /^(\d{1,2}(\s?\.\s?\d{1,2}){0,2}\s*[-–.)]?\s+|[ivx]{1,4}\s*[-–.)]\s+)/;
@@ -1454,7 +1454,6 @@ const CAPS = {
   T_iti: /expansao da infra-?estrutura de (ti|tecnologia)/,
   T_cur: /cursos previstos ou nao no pdu/,
   T_sub: /alteracao na estrutura organizacional/,
-  T_ej: /empresas juniores da unidade/,
   Q_dir: /informacoes dos dirigentes|dirigentes por subunidade|historico dos dirigentes/,
   Q_orc: /desempenho do orcamento|orcamento de custeio e capital/,
   Q_pls: /acoes relacionadas a (gestao ambiental|sustentabilidade)/,
@@ -1505,7 +1504,8 @@ const ELEM = {
     ['resultados e assertivas', [/resultado|alcanc|conquist|avanc|realiz|assertiv|exito|sucesso|consolid/]],
     ['dificuldades', [/dificuldade|limita|restri|entrave|obstacul|insuficien|carencia|escassez|problema/]],
     ['perspectivas', [/perspectiva|expectativa|proxim[oa]s?|futur|vindour|pretend|planej/]],
-    ['desafios', [/desafio|remanescente|permanece|persist|ainda (ha|e preciso|precisa|necessit)/]],
+    ['desafios futuros', [/desafio/]],
+    ['desafios remanescentes', [/remanescente|permanece|persist|continua(m)? (sendo|a ser)|ainda (ha|e preciso|precisa|necessit)/]],
   ],
 };
 function cobertura(texto, lista) {
@@ -1681,17 +1681,17 @@ function avaliarCriterios(D) {
     const bf = D.B.find(b => b.sec !== 'indice' && /(^|\s)fonte\s*:?/.test(b.n) && (b.sec === 'org' || (c && b.i > c.i && b.i <= c.i + 6)));
     set('B2', norma ? 1 : (temFonte ? 0.5 : 0), bf || c || s.head, norma ? 'fonte cita a normativa de aprovação' : (temFonte ? 'há fonte, mas sem a resolução de aprovação' : (fonteModelo ? 'fonte deixada com o campo-modelo do template' : 'sem fonte na figura do organograma')));
   }
-  // B3 · subunidades (tópico 9 / Tabela 9)
+  // B3 · subunidades (item 2.2 / Tabela 1 – Alteração na Estrutura Organizacional)
   {
     const decl = D.achaBloco(/nao houve (previsao de )?(alteracao|criacao)( (da|na) estrutura( organizacional)?| de (novas )?subunidades)|nao (houve|ocorreu|ocorreram) (a )?criacao de (novas )?subunidades|nao foram criadas (novas )?subunidades/, b => b.sec !== 'indice');
     const c = D.melhorCap('T_sub');
     const s = D.secao('subun');
-    let v = 0, info = 'não localizei o tópico 9 nem a Tabela 9';
+    let v = 0, info = 'não localizei o item 2.2 nem a Tabela 1';
     if (decl) { v = 1; info = 'declara que não houve alteração da estrutura'; }
-    else if (c && (c.win.nums >= 2 || /resolucao|consun/.test(c.win.n)) && !c.win.ph) { v = 1; info = 'Tabela 9 com dados'; }
-    else if (s.head && s.len >= 150) { v = 1; info = 'tópico 9 com relato'; }
-    else if (c || s.head) { v = 0.5; info = 'tópico 9 ou Tabela 9 presente, mas sem dados ou declaração'; }
-    else if (D.achaBloco(/subunidades? criadas?|criacao de subunidade|setores criados/, b => b.sec !== 'indice')) { v = 0.5; info = 'menciona subunidades criadas fora do tópico 9'; }
+    else if (c && (c.win.nums >= 2 || /resolucao|consun/.test(c.win.n)) && !c.win.ph) { v = 1; info = 'Tabela 1 com dados'; }
+    else if (s.head && s.len >= 150) { v = 1; info = 'item 2.2 com relato'; }
+    else if (c || s.head) { v = 0.5; info = 'item 2.2 ou Tabela 1 presente, mas sem dados ou declaração'; }
+    else if (D.achaBloco(/subunidades? criadas?|criacao de subunidade|setores criados/, b => b.sec !== 'indice')) { v = 0.5; info = 'menciona subunidades criadas fora do item 2.2'; }
     set('B3', v, decl || c || s.head, info);
   }
   // B4 · competências
@@ -1731,19 +1731,19 @@ function avaliarCriterios(D) {
     const nums = conta(w.n, NUM_RE);
     const naoInf = conta(w.n, /nao informado|em execucao|nao mensurado|sem resultado/g);
     const zerado = geral === 0 || (naoInf >= 3 && naoInf * 2 >= nums / 3);
-    let v1 = 0, i1 = 'não localizei a Tabela 1 (desempenho dos indicadores do PDU)';
-    if (c && nums >= 4 && !zerado) { v1 = 1; i1 = `Tabela 1 com ${nums} valores` + (geral !== null ? `; desempenho geral ${String(geral).replace('.', ',')}%` : ''); }
-    else if (c && nums >= 4) { v1 = 0.5; i1 = 'Tabela 1 presente, mas resultados zerados ou "não informado"/"em execução"'; }
-    else if (c) { v1 = 0.5; i1 = 'Tabela 1 identificada, sem resultados legíveis (pode estar como imagem)'; }
-    else if (geralB && nums >= 6 && !zerado) { v1 = 1; i1 = `resultados dos indicadores na seção 3.1, sem a legenda da Tabela 1` + (geral !== null ? `; desempenho geral ${String(geral).replace('.', ',')}%` : ''); }
-    else if (geralB) { v1 = 0.5; i1 = 'há percentual de desempenho geral, sem a Tabela 1 identificada'; }
+    let v1 = 0, i1 = 'não localizei a Tabela 2 (desempenho dos indicadores do PDU)';
+    if (c && nums >= 4 && !zerado) { v1 = 1; i1 = `Tabela 2 com ${nums} valores` + (geral !== null ? `; desempenho geral ${String(geral).replace('.', ',')}%` : ''); }
+    else if (c && nums >= 4) { v1 = 0.5; i1 = 'Tabela 2 presente, mas resultados zerados ou "não informado"/"em execução"'; }
+    else if (c) { v1 = 0.5; i1 = 'Tabela 2 identificada, sem resultados legíveis (pode estar como imagem)'; }
+    else if (geralB && nums >= 6 && !zerado) { v1 = 1; i1 = `resultados dos indicadores na seção 3.1, sem a legenda da Tabela 2` + (geral !== null ? `; desempenho geral ${String(geral).replace('.', ',')}%` : ''); }
+    else if (geralB) { v1 = 0.5; i1 = 'há percentual de desempenho geral, sem a Tabela 2 identificada'; }
     set('C1', v1, c || geralB, i1);
     const cab = ['meta', 'resultado', 'alcance|percentual|desempenho', 'iniciativa'].filter(h => new RegExp(h).test(w.n.slice(0, 900))).length;
     const fonte = c ? c.win.fonte : /(^|\s)fonte\s*:\s*(pdu|sinpeg)/.test(s31.n);
-    let v2 = 0, i2 = 'Tabela 1 ausente';
+    let v2 = 0, i2 = 'Tabela 2 ausente';
     if (c && cab >= 3 && fonte) { v2 = 1; i2 = `estrutura com ${cab} de 4 colunas do modelo e fonte`; }
-    else if (c) { v2 = 0.5; i2 = `Tabela 1 com ${cab} de 4 colunas do modelo${fonte ? '' : ', sem fonte'}`; }
-    else if (geralB && nums >= 6) { v2 = 0.5; i2 = 'dados da Tabela 1 presentes, mas sem a legenda "Tabela 1 – Desempenho dos indicadores do PDU"'; }
+    else if (c) { v2 = 0.5; i2 = `Tabela 2 com ${cab} de 4 colunas do modelo${fonte ? '' : ', sem fonte'}`; }
+    else if (geralB && nums >= 6) { v2 = 0.5; i2 = 'dados da Tabela 2 presentes, mas sem a legenda "Tabela 2 – Desempenho dos indicadores do PDU"'; }
     set('C2', v2, c || geralB, i2);
     const s = D.secao('pdu');
     const pars = uniq(D.prosa('pdu').concat(D.blocosCom(/analise critica/, b => b.sec !== 'indice' && ehProsa(b))));
@@ -1757,11 +1757,11 @@ function avaliarCriterios(D) {
     const s = D.secao('nprev');
     const decl = /nao houve (nenhuma )?(acao|acoes) relevante|nao houve acoes nao previstas|nao (ocorreram|houve) acoes relevantes/.test(s.n) ||
       !!D.achaBloco(/nao houve (nenhuma )?(acao|acoes) relevante[s]? nao prevista/, b => b.sec !== 'indice');
-    let v = 0, info = 'não localizei o item 3.2';
+    let v = 0, info = 'não localizei o item de ações relevantes não previstas';
     if (decl) { v = 1; info = 'declara que não houve ação relevante não prevista'; }
     else if (s.head && s.len >= 300) { v = 1; info = `ações descritas (~${fmtN(s.len)} caracteres)`; }
-    else if (s.head && s.len >= 80) { v = 0.5; info = 'item 3.2 muito curto'; }
-    else if (s.head) info = 'título do item 3.2 sem conteúdo';
+    else if (s.head && s.len >= 80) { v = 0.5; info = 'item de ações não previstas muito curto'; }
+    else if (s.head) info = 'título do item de ações não previstas sem conteúdo';
     set('C4', v, s.head, info);
   }
   // D1, D2 · orçamento
@@ -1799,7 +1799,7 @@ function avaliarCriterios(D) {
       }
       return c;
     };
-    tabela('E1', 'E2', 'T_pes', 8, 'Tabela 2');
+    tabela('E1', 'E2', 'T_pes', 8, 'tabela de servidores previstos e em atividade');
     {
       const s = D.secao(['pes1']);
       const zona = s.head ? s : D.secao('pes');
@@ -1807,9 +1807,9 @@ function avaliarCriterios(D) {
       const compara = pars.filter(b => /previst|pdu|previsao/.test(b.n) && /atividade|atual|efetiv|lotad/.test(b.n));
       const reflexo = pars.filter(b => /impacto|reflexo|deficit|carencia|insuficien|prejudic|defasagem|reposicao|aposentad|sobrecarga|redistribu|remoc|comprometid|dificulta|positiv|negativ/.test(b.n));
       const v = (compara.length && reflexo.length) ? 1 : (pars.length && (compara.length || reflexo.length) ? 0.5 : 0);
-      set('E3', v, compara[0] || reflexo[0] || zona.head, v === 1 ? 'confronta previsto e em atividade e aponta reflexos' : (v ? (compara.length ? 'compara previsto e em atividade, sem apontar reflexos' : 'aponta reflexos, sem confrontar previsto e em atividade') : 'sem análise da Tabela 2'));
+      set('E3', v, compara[0] || reflexo[0] || zona.head, v === 1 ? 'confronta previsto e em atividade e aponta reflexos' : (v ? (compara.length ? 'compara previsto e em atividade, sem apontar reflexos' : 'aponta reflexos, sem confrontar previsto e em atividade') : 'sem análise da tabela de servidores previstos e em atividade'));
     }
-    tabela('E4', ['E5', 'E6'], 'T_qua', 10, 'Tabela 3');
+    tabela('E4', ['E5', 'E6'], 'T_qua', 10, 'tabela de escolaridade/titulação');
     {
       const a = indice(D, 'iqcd'), b = indice(D, 'iqcta');
       const vA = a.calc && b.calc ? 1 : ((a.calc || b.calc || a.cita || b.cita) ? 0.5 : 0);
@@ -1817,8 +1817,8 @@ function avaliarCriterios(D) {
       const det = x => x.calc ? 'calculado' : (x.cita ? 'só citado' : 'ausente');
       set('E7', vA, a.ev || b.ev, `IQCD ${det(a)} · IQCTA ${det(b)}`, { vAdm: vD, infoAdm: `IQCTA ${det(b)}` });
     }
-    tabela('E8', 'E9', 'T_cap1', 6, 'Tabela 4');
-    tabela('E10', 'E11', 'T_cap2', 4, 'Tabela 5');
+    tabela('E8', 'E9', 'T_cap1', 6, 'tabela de capacitação por modalidade');
+    tabela('E10', 'E11', 'T_cap2', 4, 'tabela de capacitados e em atividade');
     {
       const a = indice(D, 'iccd'), b = indice(D, 'iccta');
       const vA = a.calc && b.calc ? 1 : ((a.calc || b.calc || a.cita || b.cita) ? 0.5 : 0);
@@ -1859,11 +1859,30 @@ function avaliarCriterios(D) {
     infra(['F1', 'F2', 'F3', 'F4'], 'T_ifi', 'ifi',
       /nao houve (previsao|ampliacao|expansao)[^.]{0,60}(espaco fisico|infraestrutura fisica|obras?|reformas?)|nao (houve|foi prevista) (previsao de )?(expansao|ampliacao) (do|de) espaco/,
       /obra|reforma|amplia|espaco fisico|infra-?estrutura fisica|construc|predio|sala|laboratorio/,
-      /benefici|dificuldade|providenc|atraso|conclu|melhori|permit|possibilit|impact|nao houve previsao/, 'Tabela 6');
+      /benefici|dificuldade|providenc|atraso|conclu|melhori|permit|possibilit|impact|nao houve previsao/, 'tabela de expansão do espaço físico');
+    // F9 · recursos de acessibilidade (bloco novo da tabela de espaço físico no Guia V2/2026)
+    {
+      const c = D.melhorCap('T_ifi');
+      const decl = D.achaBloco(/nao houve (previsao|ampliacao|expansao)[^.]{0,60}(espaco fisico|infraestrutura fisica|obras?|reformas?)|nao (houve|foi prevista) (previsao de )?(expansao|ampliacao) (do|de) espaco/, b => b.sec !== 'indice');
+      let v = 0, info = 'não localizei a tabela de expansão do espaço físico';
+      if (c) {
+        const i = c.win.n.indexOf('acessibilidade');
+        if (i < 0) info = 'tabela de espaço físico sem o bloco de recursos de acessibilidade';
+        else {
+          const resto = c.win.n.slice(i + 13).split(/(^|\s)fonte\s*:/)[0];
+          const nums = conta(resto, NUM_RE), ph = conta(resto, PH_RE);
+          if (nums >= 1 && !ph) { v = 1; info = `recursos de acessibilidade com ${nums} quantidade(s)`; }
+          else if (nums >= 1) { v = 0.5; info = `recursos de acessibilidade incompletos (${ph} campo(s)-modelo)`; }
+          else info = 'bloco de recursos de acessibilidade sem quantidades';
+        }
+      }
+      if (decl && v < 1) { v = 1; info = 'declara que não houve previsão de ampliação do espaço físico'; }
+      set('F9', v, c || decl, info);
+    }
     infra(['F5', 'F6', 'F7', 'F8'], 'T_iti', 'iti',
       /nao houve (previsao|aquisicao)[^.]{0,60}(equipamentos|licencas|ti\b|tecnologia)/,
       /equipament|licenc|aquisic|infra-?estrutura de ti|tecnologia da informacao|computador|notebook|impressora|software/,
-      /benefici|dificuldade|justific|melhori|permit|possibilit|impact|adquirid|atraso|nao houve previsao/, 'Tabela 7');
+      /benefici|dificuldade|justific|melhori|permit|possibilit|impact|adquirid|atraso|nao houve previsao/, 'tabela de expansão da infraestrutura de TI');
   }
   // G1–G5 · sustentabilidade e ODS
   {
@@ -1913,18 +1932,18 @@ function avaliarCriterios(D) {
     }
     set('G5', v5, o || so.head, i5, { links });
   }
-  // H1–H5 · cursos novos e empresas juniores (perfil acadêmico)
+  // H1–H3 · cursos novos (perfil acadêmico)
   {
     const c = D.melhorCap('T_cur');
     const s = D.secao('cursos');
     const decl = D.achaBloco(/nao houve (previsao de )?(abertura|oferta|criacao) de (novos )?cursos|nao (houve|ha) (previsao de )?cursos novos|nao foram (criados|ofertados) (novos )?cursos/, b => b.sec !== 'indice');
     const presente = !!(c || s.head || decl);
-    let v1 = 0, i1 = 'tópico 8 ausente (se a unidade não oferta cursos, marque "não se aplica")';
+    let v1 = 0, i1 = 'tópico 8 (cursos novos) ausente (se a unidade não oferta cursos, marque "não se aplica")';
     if (decl && !c) { v1 = 1; i1 = 'declara que não houve previsão de cursos novos'; }
-    else if (c && c.forte && c.win.fonte) { v1 = 1; i1 = 'Tabela 8 identificada, com fonte'; }
-    else if (c || s.head) { v1 = 0.5; i1 = c ? 'Tabela 8 sem fonte' : 'tópico 8 sem a Tabela 8'; }
+    else if (c && c.forte && c.win.fonte) { v1 = 1; i1 = 'tabela de cursos identificada, com fonte'; }
+    else if (c || s.head) { v1 = 0.5; i1 = c ? 'tabela de cursos sem fonte' : 'tópico 8 sem a tabela de cursos'; }
     set('H1', v1, c || decl || s.head, i1);
-    let v2 = 0, i2 = 'Tabela 8 ausente';
+    let v2 = 0, i2 = 'tabela de cursos ausente';
     if (decl) { v2 = 1; i2 = 'declaração de que não houve oferta'; }
     else if (c) {
       const w = c.win;
@@ -1937,23 +1956,6 @@ function avaliarCriterios(D) {
     const pars = (s.bs.length ? s.bs : []).filter(b => ehProsa(b, 100) && /curso/.test(b.n) && /nao houve previsao|dificuldade|impedi|justific|benefici|abertura|criacao|aprovad|implant/.test(b.n));
     let v3 = tier(pars.length + (decl ? 1 : 0), 1, 1);
     set('H3', presente ? v3 : 0, pars[0] || decl || s.head, pars.length ? `${pars.length} parágrafo(s) sobre a abertura de cursos` : (decl ? 'declaração de que não houve previsão' : 'sem relato sobre a abertura de cursos'));
-    const e = D.melhorCap('T_ej');
-    const se = D.secao('ej');
-    const semEJ = D.achaBloco(/nao (possui|possuem|ha|existe|existem|tem) empresas? juniores?|nao ha empresa junior|nao possui empresa junior/, b => b.sec !== 'indice');
-    if (!e && !se.head && !semEJ) {
-      set('H4', null, null, 'tópico de Empresas Juniores ausente: ele só vem no template de quem tem Empresa Júnior; se a unidade tem, marque "não conforme"', { ausente: true });
-      set('H5', null, null, 'tópico de Empresas Juniores ausente', { ausente: true });
-    } else {
-      let v4 = 0, i4 = 'tabela de Empresas Juniores ausente';
-      if (semEJ && !e) { v4 = 1; i4 = 'declara que não possui Empresa Júnior'; }
-      else if (e && e.forte && e.win.fonte) { v4 = 1; i4 = 'tabela de Empresas Juniores identificada, com fonte'; }
-      else if (e || se.head) { v4 = 0.5; i4 = e ? 'tabela de Empresas Juniores sem fonte' : 'tópico de Empresas Juniores sem a tabela'; }
-      set('H4', v4, e || semEJ || se.head, i4);
-      let v5 = 0, i5 = 'tabela de Empresas Juniores ausente';
-      if (semEJ && !e) { v5 = 1; i5 = 'declaração de inexistência'; }
-      else if (e) { const w = e.win; v5 = (w.nums >= 2 && !w.ph) ? 1 : 0.5; i5 = v5 === 1 ? 'tabela com dados' : `dados incompletos${w.ph ? ` (${w.ph} campo(s)-modelo)` : ''}`; }
-      set('H5', v5, e || semEJ, i5);
-    }
   }
   // H6 · considerações finais
   {
@@ -1963,7 +1965,7 @@ function avaliarCriterios(D) {
     let v = 0, info = 'não localizei as Considerações Finais';
     if (s.head) {
       if (s.len - sph * 30 < 250) info = sph ? 'só campo-modelo do template' : 'título sem texto';
-      else { v = (s.len >= 800 && cob.tem.length >= 2) ? 1 : 0.5; info = `~${fmtN(s.len)} caracteres; cobre ${cob.tem.length} de 4 elementos` + (cob.falta.length ? ` (falta: ${cob.falta.join(', ')})` : ''); }
+      else { v = (s.len >= 800 && cob.tem.length >= 2) ? 1 : 0.5; info = `~${fmtN(s.len)} caracteres; cobre ${cob.tem.length} de ${ELEM.fin.length} elementos` + (cob.falta.length ? ` (falta: ${cob.falta.join(', ')})` : ''); }
     }
     set('H6', v, s.head, info);
   }
@@ -2007,7 +2009,7 @@ function achados(D) {
   const c = D.melhorCap('T_ind');
   if (c) {
     const acima = (c.win.n.match(/\b(1(0[1-9]|[1-9]\d)|[2-9]\d{2})([.,]\d+)?\s?%/g) || []);
-    if (acima.length) out.push({ tipo: 'teto', titulo: 'Percentual de alcance acima do teto de 100% na Tabela 1', n: acima.length, pgs: [c.pg], ex: acima.slice(0, 4).join(', ') });
+    if (acima.length) out.push({ tipo: 'teto', titulo: 'Percentual de alcance acima do teto de 100% na Tabela 2', n: acima.length, pgs: [c.pg], ex: acima.slice(0, 4).join(', ') });
   }
   if (D.vazias && D.vazias.length) {
     const frac = D.vazias.length / Math.max(1, D.paginas);
@@ -2186,7 +2188,7 @@ const COM_ARTIGO = {
   'riscos e fatores': 'os riscos e fatores que afetaram os resultados', 'desafios futuros': 'os desafios futuros',
   'alcance das metas': 'o alcance das metas', 'dificuldades': 'as dificuldades', 'impactos': 'os impactos',
   'causas e encaminhamentos': 'as causas e os encaminhamentos', 'resultados e assertivas': 'os resultados e as assertivas',
-  'perspectivas': 'as perspectivas', 'desafios': 'os desafios que permanecem',
+  'perspectivas': 'as perspectivas', 'desafios remanescentes': 'os desafios remanescentes, com a justificativa de sua permanência',
 };
 const comArtigo = s => s.split(', ').map(x => COM_ARTIGO[x] || x);
 const nomeTabela = cod => { const t = TABELA[cod]; return t ? `${genero(t)} ${t}` : 'a tabela'; };
@@ -2194,15 +2196,15 @@ const CAMPOS_A5 = { 'criação': 'a data de criação', 'normativa': 'a normativ
 const CAMPOS_X1 = { 'UFPA': 'o nome da UFPA', 'unidade': 'o nome da unidade', 'título': 'o título "Relatório Anual de Atividades"', 'ano-base': 'o ano-base do exercício' };
 const MIN_DADOS = { E2: 8, E5: 10, E6: 10, E9: 6, E11: 4 };
 // Tabela a que cada critério de dados se refere, para a frase dizer qual está incompleta.
-const TABELA = { E2: 'Tabela 2', E5: 'Tabela 3', E6: 'Tabela 3', E9: 'Tabela 4', E11: 'Tabela 5', F2: 'Tabela 6', F3: 'Tabela 6', F4: 'Tabela 6', F6: 'Tabela 7', F7: 'Tabela 7', F8: 'Tabela 7', H2: 'Tabela 8', H5: 'tabela de Empresas Juniores' };
+// (pelo nome: o número da tabela muda conforme o template da unidade)
+const TABELA = { E2: 'tabela de servidores previstos e em atividade', E5: 'tabela de escolaridade/titulação', E6: 'tabela de escolaridade/titulação', E9: 'tabela de capacitação por modalidade', E11: 'tabela de capacitados e em atividade', F2: 'tabela de expansão do espaço físico', F3: 'tabela de expansão do espaço físico', F4: 'tabela de expansão do espaço físico', F6: 'tabela de expansão da infraestrutura de TI', F7: 'tabela de expansão da infraestrutura de TI', F8: 'tabela de expansão da infraestrutura de TI', H2: 'tabela de cursos' };
 const TITULO = { A3: 'Mensagem do Dirigente', H6: 'Considerações Finais' };
 // Critérios em que o Guia aceita uma declaração no lugar do conteúdo: quando a regra marca "não", ela também não achou a declaração.
 const DECLARA = {
-  B3: 'a estrutura organizacional não teve alteração', C4: 'não houve ação relevante não prevista no PDU e no PGO',
+  B3: 'não houve previsão de alteração da estrutura organizacional', C4: 'não houve ação relevante não prevista no PDU e no PGO',
   F1: 'não houve previsão de obras ou reformas', F2: 'não houve previsão de obras ou reformas', F3: 'não houve previsão de obras ou reformas', F4: 'não houve previsão de obras ou reformas',
   F5: 'não houve previsão de aquisições de TI', F6: 'não houve previsão de aquisições de TI', F7: 'não houve previsão de aquisições de TI', F8: 'não houve previsão de aquisições de TI',
   H1: 'não houve previsão de cursos novos', H2: 'não houve previsão de cursos novos', H3: 'não houve previsão de cursos novos',
-  H4: 'a unidade não possui Empresa Júnior', H5: 'a unidade não possui Empresa Júnior',
 };
 
 function fraseRegra(cod, info) {
@@ -2233,9 +2235,9 @@ function fraseRegra(cod, info) {
   if (s === 'sem fonte na figura do organograma') return 'A figura do organograma está sem fonte.';
   if (s === 'fonte deixada com o campo-modelo do template') return 'A fonte da figura do organograma ficou com o texto-modelo do template, sem preenchimento.';
   if (s === 'há fonte, mas sem a resolução de aprovação') return 'A figura do organograma tem fonte, mas ela não cita a resolução que aprovou a estrutura organizacional.';
-  if (s === 'não localizei o tópico 9 nem a Tabela 9') return 'Nem o tópico 9 nem a Tabela 9, com as subunidades criadas, foram localizados no relatório.';
-  if (s === 'tópico 9 ou Tabela 9 presente, mas sem dados ou declaração') return 'O tópico 9 ou a Tabela 9 está no relatório, mas sem os dados das subunidades criadas.';
-  if (s === 'menciona subunidades criadas fora do tópico 9') return 'O relatório menciona subunidades criadas, mas fora do tópico 9 e sem a Tabela 9.';
+  if (s === 'não localizei o item 2.2 nem a Tabela 1') return 'Nem o item 2.2 (Criação de Subunidades) nem a Tabela 1 (Alteração na Estrutura Organizacional) foram localizados no relatório.';
+  if (s === 'item 2.2 ou Tabela 1 presente, mas sem dados ou declaração') return 'O item 2.2 ou a Tabela 1 está no relatório, mas sem os dados das subunidades criadas.';
+  if (s === 'menciona subunidades criadas fora do item 2.2') return 'O relatório menciona subunidades criadas, mas fora do item 2.2 e sem a Tabela 1.';
   if (s === 'seção sem conteúdo') return 'A seção está no relatório, mas sem conteúdo.';
   if (s === 'atribuições descritas, sem o link da normativa') return 'As atribuições das subunidades estão descritas, mas sem o link ou a referência da normativa.';
   if (s === 'só o link/normativa, sem descrever as atribuições') return 'Há só o link ou a referência da normativa, sem a descrição das principais atribuições das subunidades.';
@@ -2245,16 +2247,16 @@ function fraseRegra(cod, info) {
     return falta.length ? `O quadro dos dirigentes não traz todas as informações pedidas: faltam ${listaE(falta)}.` : 'As informações dos dirigentes estão completas, mas fora do Quadro 1 identificado.';
   }
   // C1–C4 · indicadores do PDU e ações não previstas
-  if (s.startsWith('Tabela 1 presente, mas resultados zerados')) return 'A Tabela 1 está no relatório, mas com os resultados zerados ou marcados como "não informado" ou "em execução".';
-  if (s.startsWith('Tabela 1 identificada, sem resultados legíveis')) return 'A Tabela 1 foi identificada, mas sem resultados legíveis; ela pode ter sido inserida como imagem.';
-  if (s === 'há percentual de desempenho geral, sem a Tabela 1 identificada') return 'Há o percentual de desempenho geral, mas sem a Tabela 1 com o resultado de cada indicador.';
-  if ((m = s.match(/^Tabela 1 com (\d) de 4 colunas do modelo(, sem fonte)?$/))) {
+  if (s.startsWith('Tabela 2 presente, mas resultados zerados')) return 'A Tabela 2 está no relatório, mas com os resultados zerados ou marcados como "não informado" ou "em execução".';
+  if (s.startsWith('Tabela 2 identificada, sem resultados legíveis')) return 'A Tabela 2 foi identificada, mas sem resultados legíveis; ela pode ter sido inserida como imagem.';
+  if (s === 'há percentual de desempenho geral, sem a Tabela 2 identificada') return 'Há o percentual de desempenho geral, mas sem a Tabela 2 com o resultado de cada indicador.';
+  if ((m = s.match(/^Tabela 2 com (\d) de 4 colunas do modelo(, sem fonte)?$/))) {
     const col = 'meta, resultado, percentual de alcance e iniciativa';
-    if (+m[1] === 4) return 'A Tabela 1 segue as 4 colunas do modelo, mas está sem fonte.';
-    if (+m[1] === 3) return `A Tabela 1 tem 3 das 4 colunas do modelo (${col}) e está sem fonte.`;
-    return (+m[1] ? `A Tabela 1 tem só ${m[1]} das 4 colunas do modelo (${col})` : `A Tabela 1 não segue as colunas do modelo (${col})`) + (m[2] ? ' e está sem fonte.' : '.');
+    if (+m[1] === 4) return 'A Tabela 2 segue as 4 colunas do modelo, mas está sem fonte.';
+    if (+m[1] === 3) return `A Tabela 2 tem 3 das 4 colunas do modelo (${col}) e está sem fonte.`;
+    return (+m[1] ? `A Tabela 2 tem só ${m[1]} das 4 colunas do modelo (${col})` : `A Tabela 2 não segue as colunas do modelo (${col})`) + (m[2] ? ' e está sem fonte.' : '.');
   }
-  if (s.startsWith('dados da Tabela 1 presentes, mas sem a legenda')) return 'Os resultados dos indicadores estão no relatório, mas sem a legenda "Tabela 1 – Desempenho dos indicadores do PDU".';
+  if (s.startsWith('dados da Tabela 2 presentes, mas sem a legenda')) return 'Os resultados dos indicadores estão no relatório, mas sem a legenda "Tabela 2 – Desempenho dos indicadores do PDU".';
   if ((m = s.match(/^(seção 3\.1 não localizada; )?(?:(\d+) parágrafo\(s\) de análise; cobre (\d) de 5 elementos(?: \(falta: (.+)\))?|só a tabela, sem texto de análise)$/))) {
     const pre = m[1] ? 'A seção 3.1 (Análise dos resultados) não foi localizada. ' : '';
     if (!m[2]) return pre + 'Os resultados dos indicadores aparecem só na tabela, sem texto que os analise.';
@@ -2263,8 +2265,8 @@ function fraseRegra(cod, info) {
     const trata = +m[3] ? `que ${n === 1 ? 'trata' : 'tratam'} de ${m[3]} dos 5 elementos pedidos pelo Guia` : `sem nenhum dos 5 elementos pedidos pelo Guia`;
     return `${pre}Há ${qtd(n, 'parágrafo', 'parágrafos')} de análise, ${trata}; ${+m[3] ? `não ${n === 1 ? 'aborda' : 'abordam'}` : 'faltam'} ${listaE(comArtigo(m[4]))}.`;
   }
-  if (s === 'item 3.2 muito curto') return 'O item 3.2 está no relatório, mas é curto demais para descrever as ações.';
-  if (s === 'título do item 3.2 sem conteúdo') return 'O título do item 3.2 está no relatório, mas sem conteúdo abaixo dele.';
+  if (s === 'item de ações não previstas muito curto') return 'O item de ações relevantes não previstas está no relatório, mas é curto demais para descrever as ações.';
+  if (s === 'título do item de ações não previstas sem conteúdo') return 'O título do item de ações relevantes não previstas está no relatório, mas sem conteúdo abaixo dele.';
   // D1, D2 · orçamento
   if (s === 'quadro de orçamento sem identificação como Quadro 2') return 'Há um quadro de orçamento, mas sem a identificação como Quadro 2.';
   if ((m = s.match(/^(\d+) planos internos citados, sem o Quadro 2 identificado$/))) return `Há ${m[1]} planos internos citados no texto, mas sem o Quadro 2 identificado.`;
@@ -2294,7 +2296,7 @@ function fraseRegra(cod, info) {
   // a falta da declaração entra logo depois, pela lista DECLARA
   if (s === 'tabela sem valores e sem a declaração de que não houve previsão') return `${maiusc(nomeTabela(cod))} está sem valores.`;
   if (s === 'tabela sem dados legíveis') return `${maiusc(nomeTabela(cod))} está sem dados legíveis.`;
-  if (s === 'sem análise da Tabela 2') return 'Não há análise da Tabela 2: falta confrontar os servidores previstos no PDU com os em atividade e apontar os reflexos disso nas ações da unidade.';
+  if (s === 'sem análise da tabela de servidores previstos e em atividade') return 'Não há análise da tabela de servidores previstos e em atividade: falta confrontar os servidores previstos no PDU com os em atividade e apontar os reflexos disso nas ações da unidade.';
   if (s === 'compara previsto e em atividade, sem apontar reflexos') return 'A análise compara os servidores previstos no PDU com os em atividade, mas não aponta os reflexos nas ações da unidade.';
   if (s === 'aponta reflexos, sem confrontar previsto e em atividade') return 'A análise aponta reflexos nas ações da unidade, mas não confronta os servidores previstos no PDU com os em atividade.';
   if (/^(IQCD|IQCTA|ICCD|ICCTA) (ausente|só citado|calculado)( · |$)/.test(s)) {
@@ -2326,17 +2328,20 @@ function fraseRegra(cod, info) {
   if (s === 'projetos citados sem link') return 'Os programas e projetos são citados, mas sem os links de consulta.';
   if ((m = s.match(/^apenas (\d+) link\(s\) de consulta$/))) return `Há só ${qtd(+m[1], 'link', 'links')} de consulta para os programas e projetos.`;
   // H1–H6 · cursos, empresas juniores, considerações finais
-  if ((m = s.match(/^tópico (\d+) sem a (Tabela \d+)$/))) return `O tópico ${m[1]} está no relatório, mas sem a ${m[2]}.`;
+  if ((m = s.match(/^tópico (\d+) sem a (.+)$/))) return `O tópico ${m[1]} está no relatório, mas sem a ${m[2]}.`;
   if (s.startsWith('instrução do template')) return 'A instrução do template ("sem dados, excluir") ficou na tabela.';
   if ((m = s.match(/^(\d+) campo\(s\)-modelo na tabela$/))) return `${maiusc(nomeTabela(cod))} tem ${qtd(+m[1], 'campo', 'campos')} ainda com o texto-modelo do template.`;
   if (s === 'sem relato sobre a abertura de cursos') return 'Não há relato sobre a abertura dos cursos previstos nem sobre as dificuldades que a impediram.';
-  if (s === 'tópico de Empresas Juniores sem a tabela') return 'O tópico de Empresas Juniores está no relatório, mas sem a tabela.';
   if (s === 'só campo-modelo do template') return `${TITULO[cod] ? `A seção "${TITULO[cod]}"` : 'A seção'} tem só o texto-modelo do template, sem conteúdo da unidade.`;
-  if ((m = s.match(/^~([\d.]+) caracteres; cobre (\d) de 4 elementos(?: \(falta: (.+)\))?$/))) {
-    if (!m[3]) return `As considerações finais tratam dos 4 elementos pedidos pelo Guia, mas são curtas (cerca de ${m[1]} caracteres).`;
-    const trata = +m[2] ? `tratam de ${m[2]} dos 4 elementos pedidos pelo Guia` : 'não tratam de nenhum dos 4 elementos pedidos pelo Guia';
-    return `As considerações finais têm cerca de ${m[1]} caracteres e ${trata}; ${+m[2] ? 'não abordam' : 'faltam'} ${listaE(comArtigo(m[3]))}.`;
+  if ((m = s.match(/^~([\d.]+) caracteres; cobre (\d) de (\d) elementos(?: \(falta: (.+)\))?$/))) {
+    if (!m[4]) return `As considerações finais tratam dos ${m[3]} elementos pedidos pelo Guia, mas são curtas (cerca de ${m[1]} caracteres).`;
+    const trata = +m[2] ? `tratam de ${m[2]} dos ${m[3]} elementos pedidos pelo Guia` : `não tratam de nenhum dos ${m[3]} elementos pedidos pelo Guia`;
+    return `As considerações finais têm cerca de ${m[1]} caracteres e ${trata}; ${+m[2] ? 'não abordam' : 'faltam'} ${listaE(comArtigo(m[4]))}.`;
   }
+  // F9 · acessibilidade
+  if (s === 'tabela de espaço físico sem o bloco de recursos de acessibilidade') return 'A tabela de expansão do espaço físico está sem o bloco de recursos de acessibilidade.';
+  if (s === 'bloco de recursos de acessibilidade sem quantidades') return 'O bloco de recursos de acessibilidade da tabela de espaço físico está sem as quantidades previstas e concluídas.';
+  if ((m = s.match(/^recursos de acessibilidade incompletos \((\d+) campo\(s\)-modelo\)$/))) return `Os recursos de acessibilidade estão incompletos: ${qtd(+m[1], 'campo', 'campos')} ainda com o texto-modelo do template.`;
   // X1, X2 · capa e referências
   if ((m = s.match(/^falta na capa: (.+)$/))) { const f = m[1].split(', ').map(k => CAMPOS_X1[k] || k); return `${f.length > 1 ? 'Faltam' : 'Falta'} na capa ${listaE(f)}.`; }
   if (s === 'título sem referências') return 'O título "Referências" está no relatório, mas sem referências listadas.';
@@ -2586,7 +2591,7 @@ function aviso(txt, tipo) {
 
 /* ===================== estado e sessão ===================== */
 const CHAVE = 'raa-avaliador-v2';
-const EST = { cfg: { ano: new Date().getFullYear() - 1, alfa: 0.5, pesos: {}, complementares: true }, unidades: [], aberta: null, filtro: 'todos', ordem: 'entrada', ref: null, processando: false, busca: '', filtroLista: 'todos', filtroFaixa: null, aba: 'crit', ultimoLoteIA: null };
+const EST = { cfg: { ano: Math.max(2026, new Date().getFullYear() - 1), alfa: 0.5, pesos: {}, complementares: true }, unidades: [], aberta: null, filtro: 'todos', ordem: 'entrada', ref: null, processando: false, busca: '', filtroLista: 'todos', filtroFaixa: null, aba: 'crit', ultimoLoteIA: null };
 function carregar() {
   try {
     const s = localStorage.getItem(CHAVE); if (!s) return;
@@ -3165,7 +3170,7 @@ Os trechos abaixo foram extraídos automaticamente do PDF: podem estar incomplet
 
 ${tr('Q1 · Mensagem do dirigente', s.Q1)}
 
-${tr('Q2 · Tabela 1 e análise dos indicadores', s.Q2)}
+${tr('Q2 · Tabela 2 e análise dos indicadores', s.Q2)}
 
 ${tr('Q3 · Gestão orçamentária', s.Q3)}
 
@@ -3754,7 +3759,7 @@ function renderCalibracao() {
 }
 // Importa uma planilha de referência: o formato exportado por esta ferramenta, a planilha "Avaliação em Excel"
 // (mesmos códigos oficiais) ou a avaliação de 26 itens (mapeada para os critérios equivalentes).
-const MAPA26 = { A1: ['X1'], A3: ['A2'], A4: ['A3'], A5: ['A4'], B1: ['A5'], B2: ['B2'], B3: ['B4'], B4: ['B6'], C1: ['C2'], C2: ['C4'], D1: ['D1'], D2: ['D2'], E1: ['E2'], E2: ['E5'], E3: ['E9', 'E11'], E4: ['E7', 'E12'], F1: ['F2'], F2: ['F6'], G1: ['G2'], G2: ['G5'], H1: ['H2'], H3: ['H5'], I1: ['H6'], I2: ['X2'] };
+const MAPA26 = { A1: ['X1'], A3: ['A2'], A4: ['A3'], A5: ['A4'], B1: ['A5'], B2: ['B2'], B3: ['B4'], B4: ['B6'], C1: ['C2'], C2: ['C4'], D1: ['D1'], D2: ['D2'], E1: ['E2'], E2: ['E5'], E3: ['E9', 'E11'], E4: ['E7', 'E12'], F1: ['F2'], F2: ['F6'], G1: ['G2'], G2: ['G5'], H1: ['H2'], I1: ['H6'], I2: ['X2'] };
 function lerReferencia(abas, nomeArq) {
   const achaCab = linhas => linhas.findIndex(l => l && String(l[0] || '').trim().toLowerCase() === 'sigla');
   const num = v => { if (v === null || v === undefined || v === '') return null; const s = String(v).trim().toLowerCase(); if (s === 'n/a' || s === 'na' || s.startsWith('não se aplica') || s.startsWith('nao se aplica') || s.startsWith('não verific')) return null; if (s.startsWith('conforme')) return 1; if (s.startsWith('parcial')) return 0.5; if (s.startsWith('não conforme') || s.startsWith('nao conforme')) return 0; const n = +String(v).replace(',', '.'); return isNaN(n) ? null : n; };
