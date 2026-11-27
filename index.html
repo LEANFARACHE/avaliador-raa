@@ -499,6 +499,12 @@ td[data-l="Perfil"] .nome{white-space:nowrap}
   .aba-n{display:none}
 }
 
+/* pesos recebidos por link */
+.pesos-rec{border-color:var(--accent);margin-bottom:20px}
+.pesos-rec p{margin:6px 0}
+.pesos-rec .scroll{max-height:320px;margin:8px 0 14px}
+#cfg-link-box input{width:100%;margin-top:6px}
+
 </style>
 </head>
 <body>
@@ -530,6 +536,7 @@ td[data-l="Perfil"] .nome{white-space:nowrap}
   </aside>
 
   <main class="conteudo">
+    <div id="pesos-recebidos" class="noprint"></div>
     <section class="view" id="v-relatorios">
       <div id="lista-area">
         <header class="topo">
@@ -644,7 +651,9 @@ td[data-l="Perfil"] .nome{white-space:nowrap}
         <label class="check"><input type="checkbox" id="cfg-comp"> Incluir os critérios complementares (X1 capa e X2 referências) na conformidade</label>
       </section>
       <section class="card">
-        <div class="card-cab"><h2>Pesos dos critérios</h2><button class="quiet" id="cfg-reset" type="button">Restaurar padrão</button></div>
+        <div class="card-cab"><h2>Pesos dos critérios</h2><div class="row"><button id="cfg-link" type="button">Copiar link com estes pesos</button><button class="quiet" id="cfg-reset" type="button">Restaurar padrão</button></div></div>
+        <p class="cap">O link leva estes pesos e o peso da conformidade na nota final. Quem abrir vê o que muda e escolhe se aplica no próprio navegador.</p>
+        <div id="cfg-link-box"></div>
         <p class="cap">Padrão: 3 para os itens centrais (Tabela 1 e sua análise, orçamento, PLS, ODS, mensagem e considerações finais), 2 para tabelas e dados, 1 para elementos formais. Peso 0 tira o critério da conta. Os critérios registrados no Sinpeg (prazo, Gestão do PDU, Anexos e Formulários Específicos) não fazem parte desta avaliação.</p>
         <div class="scroll pesos"><table class="stack" id="cfg-pesos"></table></div>
       </section>
@@ -3829,7 +3838,63 @@ function ligaConfig() {
     if (v === R.PESOS_PADRAO[i.dataset.peso]) delete EST.cfg.pesos[i.dataset.peso]; else EST.cfg.pesos[i.dataset.peso] = v;
     salvar(); renderLista();
   });
+  $('#cfg-link').onclick = copiarLinkPesos;
   $('#cfg-reset').onclick = () => { EST.cfg.pesos = {}; salvar(); renderConfig(); renderLista(); aviso('Pesos padrão restaurados.', 'ok'); };
+}
+
+/* ----- pesos por link: quem ajusta copia o link; quem abre decide se aplica ----- */
+// Formato: ?pesos=alfa:50,comp:1,B3:2,E3:0 — só os critérios fora do padrão; os ausentes voltam ao padrão.
+function linkPesos() {
+  const partes = [`alfa:${Math.round(EST.cfg.alfa * 100)}`, `comp:${EST.cfg.complementares === false ? 0 : 1}`];
+  R.CRIT.forEach(c => { const v = EST.cfg.pesos[c.cod]; if (v !== undefined && v !== R.PESOS_PADRAO[c.cod]) partes.push(`${c.cod}:${v}`); });
+  return location.origin + location.pathname + '?pesos=' + partes.join(',');
+}
+function lerLinkPesos() {
+  const m = location.search.match(/[?&]pesos=([^&#]*)/); if (!m) return null;
+  const cfg = { alfa: EST.cfg.alfa, complementares: EST.cfg.complementares !== false, pesos: {} };
+  let valido = false;
+  decodeURIComponent(m[1]).split(',').forEach(p => {
+    const [k, x] = p.split(':'), n = parseInt(x, 10);
+    if (isNaN(n)) return;
+    if (k === 'alfa' && n >= 0 && n <= 100) { cfg.alfa = n / 100; valido = true; }
+    else if (k === 'comp') { cfg.complementares = n !== 0; valido = true; }
+    else if (R.PESOS_PADRAO[k] !== undefined && n >= 0 && n <= 5) { if (n !== R.PESOS_PADRAO[k]) cfg.pesos[k] = n; valido = true; }
+  });
+  return valido ? cfg : null;
+}
+function limparLinkPesos() { history.replaceState(null, '', location.pathname + location.hash); $('#pesos-recebidos').innerHTML = ''; }
+function mostrarPesosRecebidos() {
+  const cfg = lerLinkPesos();
+  if (!cfg) { if (/[?&]pesos=/.test(location.search)) { limparLinkPesos(); aviso('O link de pesos não pôde ser lido. Peça um novo link.', 'err'); } return; }
+  const atual = c => (EST.cfg.pesos[c] !== undefined ? EST.cfg.pesos[c] : R.PESOS_PADRAO[c]);
+  const novo = c => (cfg.pesos[c] !== undefined ? cfg.pesos[c] : R.PESOS_PADRAO[c]);
+  const muda = R.CRIT.filter(c => atual(c.cod) !== novo(c.cod)).map(c => `<tr><td class="mono">${c.cod}</td><td>${esc(c.texto)}</td><td class="n">${atual(c.cod)}</td><td class="n"><b>${novo(c.cod)}</b></td></tr>`);
+  const pa = Math.round(EST.cfg.alfa * 100), pn = Math.round(cfg.alfa * 100);
+  const outros = [];
+  if (pa !== pn) outros.push(`Peso da conformidade técnica na nota final: de ${pa}% para <b>${pn}%</b>.`);
+  if ((EST.cfg.complementares !== false) !== cfg.complementares) outros.push(cfg.complementares ? 'Passa a <b>incluir</b> os critérios complementares (X1 capa e X2 referências).' : 'Passa a <b>deixar de fora</b> os critérios complementares (X1 capa e X2 referências).');
+  if (!muda.length && !outros.length) { limparLinkPesos(); aviso('Os pesos deste link são iguais aos que você já usa.', 'ok'); return; }
+  const n = okUnidades().length;
+  $('#pesos-recebidos').innerHTML = `<section class="card pesos-rec">
+    <h2>Este link traz outros pesos</h2>
+    <p class="cap">Alguém ajustou os pesos e mandou este link. Se aplicar, eles passam a valer neste navegador${n ? ` e as notas dos ${plural(n, 'relatório', 'relatórios')} daqui são recalculadas` : ''}. Dá para voltar ao padrão em Configurações.</p>
+    ${outros.map(o => `<p>${o}</p>`).join('')}
+    ${muda.length ? `<p>${plural(muda.length, 'critério muda', 'critérios mudam')} de peso:</p><div class="scroll"><table><thead><tr><th>Cód.</th><th>Critério</th><th class="n">Hoje</th><th class="n">No link</th></tr></thead><tbody>${muda.join('')}</tbody></table></div>` : ''}
+    <div class="row"><button id="pesos-aplicar" type="button">Aplicar estes pesos</button><button class="ghost" id="pesos-ignorar" type="button">Ignorar</button></div></section>`;
+  $('#pesos-aplicar').onclick = () => {
+    EST.cfg.pesos = cfg.pesos; EST.cfg.alfa = cfg.alfa; EST.cfg.complementares = cfg.complementares;
+    salvar(); renderConfig(); if (EST.aberta) reDetalheParcial(unid(EST.aberta)); renderLista();
+    limparLinkPesos(); aviso('Pesos aplicados. As notas já usam os pesos novos.', 'ok');
+  };
+  $('#pesos-ignorar').onclick = () => { limparLinkPesos(); aviso('Pesos do link ignorados. Nada mudou.', 'ok'); };
+}
+async function copiarLinkPesos() {
+  const url = linkPesos();
+  try { await navigator.clipboard.writeText(url); $('#cfg-link-box').innerHTML = ''; aviso('Link copiado. Mande para quem vai usar estes pesos.', 'ok'); }
+  catch (e) {
+    $('#cfg-link-box').innerHTML = `<label class="lbl">Copie o link abaixo<input id="cfg-link-txt" readonly value="${esc(url)}"></label>`;
+    const i = $('#cfg-link-txt'); i.focus(); i.select();
+  }
 }
 
 /* ----- IA da equipe: situação do serviço ----- */
@@ -3923,6 +3988,7 @@ $('#btn-limpar').onclick = e => limparSessao(e.currentTarget);
 $('#ref-file').addEventListener('change', e => { if (e.target.files[0]) importarReferencia(e.target.files[0]); e.target.value = ''; });
 window.addEventListener('hashchange', rota);
 rota();
+mostrarPesosRecebidos();
 if (EST.unidades.length) aviso(`Sessão restaurada: ${okUnidades().length} relatório(s) avaliados neste navegador.`, 'ok');
 window.__raa = { EST, IA, planilha, dadosPainel, montarPdf, abrirDetalhe, notas, pacote };
 }
